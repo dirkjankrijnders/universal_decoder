@@ -1,4 +1,7 @@
-
+/*
+If serial output is desired uncommment the #undef line. For production, i.e.
+without computer connected this line should be commented out. 
+*/
 #define DEBUG_OUTPUT
 //#undef DEBUG_OUTPUT
 
@@ -11,28 +14,33 @@
 #define DEBUGLN(x)
 #endif
 
+/* We're a loconet decoder! */
 #include <LocoNet.h>
 
+/* Include the CV handling and the pin functionalities */
 #include "decoder_conf.h"
 #include "configuredpins.h"
 #include "cvaccess.h"
-
-#define servoEnablePin 15
-
-#define ARTNR 10001
 
 decoder_conf_t EEMEM _CV = {
 #include "default_conf.h"
 };
 
+#define MAX 24
+ConfiguredPin* confpins[MAX];
+
+/* Power to pins management */
+#define servoEnablePin 15
 
 void enableServos();
 void disableServos();
 
+bool pins_busy = false;
+
 /* 
-    Serial related stuff
+The LocoNet CV related stuff
 */
-int incomingByte = 0;
+#define ARTNR 10001
 
 lnMsg *LnPacket;
 
@@ -40,18 +48,8 @@ LocoNetCVClass lnCV;
 
 boolean programmingMode;
 
-/* 
-    Button related stuff
-*/
-
 #define LOCONET_TX_PIN 5
 
-bool pins_busy = false;
-/*
-	Switch related stuff
-*/
-#define MAX 24
-ConfiguredPin* confpins[MAX];
 
 void reportSwitch(uint16_t Address, uint16_t state){
 #ifdef DS54
@@ -66,7 +64,6 @@ void reportSwitch(uint16_t Address, uint16_t state){
 		AddrH |= OPC_SW_REP_HI | OPC_SW_REP_SW ;
 	
 	LocoNet.send(OPC_SW_REP, AddrL, AddrH );
-//  LocoNet.reportSwitch(address);
 #else
 	if ( state == 0 ) {
 		LocoNet.reportSensor(Address, 0);
