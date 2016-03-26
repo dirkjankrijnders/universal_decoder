@@ -1,0 +1,3 @@
+[submodule "lib/decconf"]
+	path = lib/decconf
+	url = git@github.com:dirkjankrijnders/LN_Servo_playground.git
