@@ -86,8 +86,10 @@ void setup() {
   pinMode( servoEnablePin, OUTPUT);
   disableServos();
 #ifdef USE_SERIAL
-  while (!Serial)
-    Serial.begin(57600);
+  Serial.begin(57600);
+  while (!Serial){
+    ;
+  }
 #endif
 
   DEBUGLN("Universal decoder v0.0");  
