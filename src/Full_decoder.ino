@@ -98,6 +98,8 @@ void setup() {
   uint8_t i = 0;
   uint8_t pin_config;
   uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
+  DEBUG("Max # of pins:");
+  DEBUGLN(MAX);
    
   for (i = 0; i < MAX; i++) {
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[i]));
@@ -117,18 +119,20 @@ void setup() {
       default:
         confpins[i] = new InputPin(i, pin, address);
         break;
-    }  
+    }
+    DEBUG("Pin #");
+    DEBUGLN(i);
     confpins[i]->print();
   }
   programmingMode = false;
-
 }
 
 void loop() {
 	pins_busy = false;
   for (uint8_t i =0 ; i < MAX ; i++) {
-	  pins_busy |= confpins[i]->update();
+	 confpins[i]->update();
   };
+  
   /*** LOCONET ***/
   LnPacket = LocoNet.receive();
   if (LnPacket) {
@@ -367,12 +371,9 @@ int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) {
   DEBUG("Discover: ");
   DEBUG(ArtNr);
   DEBUG(ARTNR);
-//    if (ArtNr == ARTNR ) {
-      uint16_t MyModuleAddress = eeprom_read_byte(&_CV.address);
-      ModuleAddress = MyModuleAddress;
-    DEBUG(ModuleAddress);
-      return LNCV_LACK_OK;
- //   }
-    
-
+  uint16_t MyModuleAddress = eeprom_read_byte(&_CV.address);
+  ModuleAddress = MyModuleAddress;
+  ArtNr = ARTNR;
+  DEBUG(ModuleAddress);
+  return LNCV_LACK_OK;
 }
