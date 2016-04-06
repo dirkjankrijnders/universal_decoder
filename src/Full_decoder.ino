@@ -97,8 +97,8 @@ void setup() {
   
   uint8_t i = 0;
   uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed;
-  
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
+   
   for (i = 0; i < MAX; i++) {
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[i]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.arduinopin));
@@ -109,7 +109,9 @@ void setup() {
         pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pos1));
         pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pos2));
         speed = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.speed));
-        confpins[i] = new ServoSwitch(i, pin, address, pos1, pos2, speed, servoEnablePin);
+        fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot1));
+        fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot2));
+        confpins[i] = new ServoSwitch(i, pin, address, pos1, pos2, speed, servoEnablePin, fbslot1, fbslot2);
 		confpins[i]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.state)));
         break;
       default:
