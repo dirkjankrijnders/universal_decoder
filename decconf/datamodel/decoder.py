@@ -11,7 +11,8 @@ from decoders.dec10001 import dec10001controller
 
 class Decoder(QtCore.QAbstractTableModel):
 	desc = {"10001": [[1, "Address", 1, 1], [6, "No configured pins", 1, 1], [7, "Manufacturer", 1, 0], [8, "Version", 1, 0], [9, "Pin configuration slot 1",1 ,1], [10, "Pin configuration slot 2",1,1], [32, "peri_conf_1[0]",1 ,1 ], [33, "peri_conf_1[1]", 1, 1]],
-			"10002": [[7, "Manufacturer", 1, 0], [8, "Version", 1, 0]]}
+			"10002": [[7, "Manufacturer", 1, 0], [8, "Version", 1, 0]],
+			"5001": [[7, "Manufacturer", 1, 0], [8, "Version", 1, 0]]}
 	
 	"""Represents a decoder"""
 	def __init__(self, _class, _address, cs = None):
@@ -188,7 +189,7 @@ class cvController(object):
 
 class DecoderController(object):
 	"""	"""
-	desc = {"10001": "Accesory decoder", "11001": "Lokschuppen specialty", "10002": "Loconet Monitor"};
+	desc = {"10001": "Accesory decoder", "11001": "Lokschuppen specialty", "10002": "Loconet Monitor", "5001": "Arduino LNCV example"};
 	
 	def __init__(self, widget, cvController, tabwidget):
 		"""docstring for __init__"""
