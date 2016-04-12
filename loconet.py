@@ -121,7 +121,8 @@ def recvLnMsg(buf):
 				#else
 				#Buffer->Stats.RxErrors++ ;
 
-
+			else:
+				print("Invalid packet recieved: ", accumulator )
 			if( tempMsg != None ):
 				return bytearray(tempMsg);
 
