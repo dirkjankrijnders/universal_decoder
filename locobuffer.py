@@ -56,3 +56,4 @@ class LocoBuffer(object):
 			buf = self.iq.get();
 			print("Sending to serial: ", buf)
 			self.serial.write(buf);
+			self.iq.task_done();
