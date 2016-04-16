@@ -13,6 +13,7 @@ from decconf.ui.mainwindow import Ui_MainWindow
 from decconf.ui.prefdialog import PreferenceDialog
 #from decconf.datamodel.treemodel import TreeModel, TreeItem
 from decconf.datamodel.decoder import Decoder, DecoderController, cvController
+from dummy_serial import dummySerial
 
 from loconet import LocoNet as LN
 from loconet import makeLNCVresponse, parseLNCVmsg
@@ -70,6 +71,8 @@ class ControlMainWindow(QtGui.QMainWindow):
 		for ii, port in enumerate(serial.tools.list_ports.comports()):
 			self.ui.comboBox.addItem("{}".format(port[0]), userdata = port);
 		
+		self.ui.comboBox.addItem("Dummy", userdata = 'dummy');
+		
 		portIndex = self.ui.comboBox.findText(self.config.get('general', 'device'))
 		if portIndex >=0:
 			self.ui.comboBox.setCurrentIndex(portIndex);
@@ -94,6 +97,13 @@ class ControlMainWindow(QtGui.QMainWindow):
 		if self.ui.connectserial.text() == "Connect":
 			port = self.ui.comboBox.currentText();
 			self.logger.info("Connecting!", port)
+			if port == 'Dummy':
+				self.serial = dummySerial();
+				self.ui.connectserial.setText("Disconnect");
+				self.lb = LocoBuffer(self.serial, self.sendQueue, self.recvQueue);
+				self.connected = True
+				return
+				
 			self.serial.port = port;
 			try:
 				self.serial.open();
