@@ -1,3 +1,4 @@
+import logging
 import threading
 import collections
 
@@ -5,6 +6,7 @@ from loconet import recvLnMsg, checksumLnBuf
 
 class LocoBuffer(object):
 	def __init__(self, serial, inputQueue, outputQueue):
+		self.logger = logging.getLogger('decconf.LocoBuffer')
 		self.serial = serial;
 		self.iq = inputQueue;
 		self.oq = outputQueue;
@@ -19,24 +21,23 @@ class LocoBuffer(object):
 		self.writer.daemon = True
 		self.writer.start();
 		
+		
 	def addToQueue(self, msg):
 		self.mq.append(msg);
-		print(self.mq)
 		if len(self.mq) == 1:
 			self.iq.put(self.mq[0].msg);
 	
 	def read(self):
-		buf = b"";
+		buf = b""
 		while self.running:
 			buf += self.serial.read(1);
-
 			if recvLnMsg(buf):
-				print("Recv LN Msg: 0x", " ".join("{:02x}".format(b) for b in buf));
+				self.logger.debug("Recv LN Msg: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
 				if (len(self.mq) > 0):
-					print(self.mq)
+					self.logger.debug("Match queue: {}".format(self.mq))
 				if (len(self.mq) > 0) and self.mq[0].match(buf):
 					self.mq.popleft();
-					print(self.mq)
+					self.logger.debug("Match queue: {}".format(self.mq))
 					if (len(self.mq) > 0):
 						self.iq.put(self.mq[0].msg);
 
@@ -48,12 +49,12 @@ class LocoBuffer(object):
 		#self.iq.push(buf);
 		buf = bytes(buf)
 		buf = checksumLnBuf(buf);
-		print("Push to send Queue: ", buf)
+		self.logger.debug("Push to send Queue: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)))
 		self.iq.put(buf)
 		
 	def writet(self):
 		while self.running:
 			buf = self.iq.get();
-			print("Sending to serial: ", buf)
+			self.logger.debug("Sending to serial: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)))
 			self.serial.write(buf);
 			self.iq.task_done();

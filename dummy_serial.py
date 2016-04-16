@@ -1,4 +1,5 @@
 import copy
+import logging
 import os
 import queue
 
@@ -12,6 +13,7 @@ class dummySerial(object):
 		self.stream = queue.Queue();
 		self.port = ''
 		self.clients = [];
+		self.logger = logging.getLogger('decconf.dummySerial');
 		self.clients.append(dummyDecoder(cvfile = 'dummydecoder1.npz'))
 		self.clients.append(dummyDecoder(cvfile = 'dummydecoder2.npz'))
 		
@@ -22,11 +24,10 @@ class dummySerial(object):
 		return self.stream.get();
 	
 	def write(self, buf):
-		print("Writing")
 		for c in self.clients:
 			resp = c.checkMsg(buf);
 			if resp is not None:
-				print('DS Sending: {}'.format(resp));
+				self.logger.debug('DS Sending: {}'.format( " ".join("{:02x}".format(b) for b in resp)));
 				for b in resp:
 					self.stream.put(bytes([b]));
 
@@ -42,23 +43,25 @@ class dummyDecoder(object):
 			#with open(self.cvfile, 'rb') as fid:
 			with np.load(self.cvfile) as data:
 				self.CVs = data['CVs'];
-		print('Created dummy decoder with address ', str(self.CVs[1]))
+		self.logger = logging.getLogger('decconf.dummyDecoder');
+		
+		self.logger.info('Created dummy decoder with address {}'.format(str(self.CVs[1])))
 		
 	def checkMsg(self, buf):
 		resp = None;
-		print('Detecting dummy decoder with address ', str(self.CVs[1]))
+		self.logger.debug('Checking message against dummy decoder with address {}'.format(str(self.CVs[1])))
 		#print(buf)
 		if buf == makeLNCVresponse(0xFFFF,0,0xFFFF, 0, opc = LN.OPC_IMM_PACKET, src = LN.LNCV_SRC_KPU, req = LN.LNCV_REQID_CFGREQUEST):
 			
 			resp = makeLNCVresponse(10001, 0, self.CVs[1], 0x00, src = LN.LNCV_SRC_MODULE); #bytes.fromhex("E50F05494B1F037F7F00007F000071")
 
 		elif buf == checksumLnBuf(startModuleLNCVProgramming(10001, self.CVs[1])):
-			print("Decoder programming start, decoder address {}".format(self.CVs[1]));
+			self.logger.info("Decoder programming start, decoder address {}".format(self.CVs[1]));
 			self.programmingMode = True;
 			resp = makeLNCVresponse(10001, 0, self.CVs[1], 0x80, src = LN.LNCV_SRC_MODULE);
 
 		if buf == checksumLnBuf(stopModuleLNCVProgramming(10001, self.CVs[1])):
-			print("Decoder programming stop, decoder address {}".format(self.CVs[1]));
+			self.logger.info("Decoder programming stop, decoder address {}".format(self.CVs[1]));
 			self.programmingMode = False;
 			np.savez(self.cvfile, CVs=self.CVs);
 			
@@ -73,11 +76,11 @@ class dummyDecoder(object):
 				return None
 		else:
 			return resp
-		print(lncvMsg['ReqId'])
+
 		if lncvMsg is not None:
 			if lncvMsg['ReqId'] == LN.LNCV_REQID_CFGREQUEST:
 				cv = lncvMsg['lncvNumber'];
-				print("Reading CV ", cv);
+				self.logger.info("Reading CV {}".format(cv));
 				resp = makeLNCVresponse(10001, cv, self.CVs[cv], 0x00, src = LN.LNCV_SRC_MODULE);
 				
 		"""if buf == (readModuleLNCV(10001, self.CVs[1], 1)):
@@ -90,7 +93,7 @@ class dummyDecoder(object):
 		"""	
 		if lncvMsg is not None:
 			if lncvMsg['ReqId'] == LN.LNCV_REQID_CFGWRITE:
-				print("Setting CV {} to {}".format(lncvMsg['lncvNumber'], lncvMsg['lncvValue']))
+				self.logger.info("Setting CV {} to {}".format(lncvMsg['lncvNumber'], lncvMsg['lncvValue']))
 				self.CVs[lncvMsg['lncvNumber']] = lncvMsg['lncvValue'];
 				resp  = bytearray.fromhex('b4ff7f');
 				returnCode = LN.LNCV_LACK_OK

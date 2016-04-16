@@ -1,3 +1,4 @@
+import logging
 import struct
 
 LN_CHECKSUM_SEED = 0xFF
@@ -74,6 +75,8 @@ class LocoNet(object):
 	LNCV_LACK_ERROR_OUTOFRANGE = 3
 # Everything OK
 	LNCV_LACK_OK = 127
+	
+	logger = logging.getLogger('decconf.loconet');
 
 # the valid range for module addresses (CV0) as per the LNCV spec.
 #	LNCV_MIN_MODULEADDR (0)
@@ -122,8 +125,9 @@ def recvLnMsg(buf):
 				#Buffer->Stats.RxErrors++ ;
 
 			else:
-				print("Invalid packet recieved: ", accumulator )
+				LocoNet.logger.warn("Invalid packet recieved: {}".format(accumlator) )
 			if( tempMsg != None ):
+				LocoNet.logger.debug("Packet recieved: 0x {}".format( " ".join("{:02x}".format(b) for b in tempMsg)));
 				return bytearray(tempMsg);
 
 		# Packet not complete so add the current byte to the checksum
@@ -214,15 +218,17 @@ class LNCVConfirmedMessage(object):
 		self.src = src
 		self.retry = retry;
 		
+		self.logger = logging.getLogger('decconf.Loconet.LNCVConfirmedMessage')
+		
 		self.send = False;
 
 	def match(self, reply):
-		print("Compare: ", self.reply, " to ", reply)
-		print(len(reply), " ?= ", len(self.mask))
+		#print("Compare: ", self.reply, " to ", reply)
+		#print(len(reply), " ?= ", len(self.mask))
 		if len(reply) != len(self.mask):
 			return False
-		print("Length ok")
-		print(int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big'), (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big')))
+		#print("Length ok")
+		self.logger.debug('Comparing: {} == {}'.format(int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big'), (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big'))))
 		if ((int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big')) == (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big'))):
 			self.src.messageConfirmed(self, reply);
 			return True
@@ -236,7 +242,7 @@ class LNCVReadMessage(LNCVConfirmedMessage):
 		reply = bytearray(msg);
 		reply[0] = 0xe5;
 		mask[0] = 0xff;
-		print("MAsk:", mask)
+		#print("MAsk:", mask)
 		super(LNCVReadMessage, self).__init__(msg, reply, mask, src);
 	
 class LNCVWriteMessage(LNCVConfirmedMessage):
