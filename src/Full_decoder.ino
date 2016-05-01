@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 /*
 If serial output is desired uncommment the #undef line. For production, i.e.
 without computer connected this line should be commented out. 
