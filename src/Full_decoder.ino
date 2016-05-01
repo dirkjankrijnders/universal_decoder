@@ -51,43 +51,15 @@ boolean programmingMode;
 #define LOCONET_TX_PIN 5
 
 void reportSlot(uint16_t slot, uint16_t state) {
+  DEBUG("Reporting slot ");
+  DEBUG(slot);
+  DEBUG(" Address: ");
+  DEBUG(confpins[slot]->_address);
+  DEBUG(" State: ");
+  DEBUGLN(state);
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
-void reportSwitch(uint16_t slot, uint16_t state){
-	ServoSwitch* confslot = (ServoSwitch*)confpins[slot];
-#ifdef DS54
-	uint16_t address = confslot->address;
-	byte AddrH = ( (--address >> 7) & 0x0F ) | OPC_SW_REP_INPUTS  ;
-	byte AddrL = ( address) & 0x7F ;
-
-	if ( state == 0 )
-		AddrH |= OPC_SW_REP_SW  ;
-	if ( state == 1 )
-		AddrH |= OPC_SW_REP_HI  ;
-	if ( state == 2 )
-		AddrH |= OPC_SW_REP_HI | OPC_SW_REP_SW ;
-	
-	LocoNet.send(OPC_SW_REP, AddrL, AddrH );
-#else
-	if ( state == 0 ) {
-		reportSlot(confslot->_fbslot1, 0);
-		reportSlot(confslot->_fbslot2, 0);
-		//LocoNet.reportSensor(Address, 0);
-		//LocoNet.reportSensor(Address+10, 0);
-	} else if( state == 1 ) {
-		reportSlot(confslot->_fbslot1, 1);
-		reportSlot(confslot->_fbslot2, 0);
-		//LocoNet.reportSensor(Address, 1);
-		//LocoNet.reportSensor(Address+10, 0);		
-	} else if( state == 2 ) {
-		reportSlot(confslot->_fbslot1, 0);
-		reportSlot(confslot->_fbslot2, 1);
-		//LocoNet.reportSensor(Address, 0);
-		//LocoNet.reportSensor(Address+10, 1);
-	}
-#endif
-}
 
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
