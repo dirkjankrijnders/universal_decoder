@@ -97,10 +97,13 @@ void setup() {
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot2));
         confpins[i] = new ServoSwitch(i, pin, address, pos1, pos2, speed, servoEnablePin, fbslot1, fbslot2);
-		confpins[i]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.state)));
+		    confpins[i]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.state)));
+        break;
+      case 1: // Input
+        confpins[i] = new InputPin(i, pin, address);
         break;
       default:
-        confpins[i] = new InputPin(i, pin, address);
+        confpins[i] = new ConfiguredPin(i, pin, address);
         break;
     }
     DEBUG("Pin #");
