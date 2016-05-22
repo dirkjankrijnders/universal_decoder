@@ -99,7 +99,7 @@ class TreeModel(QtCore.QAbstractItemModel):
 		if parent is None:
 			return self.addRootItem(item);
 		
-		self.beginInsertRows(parent, parent.childCount(), parent.childCount())q;
+		self.beginInsertRows(parent, parent.childCount(), parent.childCount());
 		parent.append(item);
 		self.endInsertRows(parent, parent.childCount(), parent.childCount());
 		
