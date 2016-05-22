@@ -47,8 +47,11 @@ class LocoBuffer(object):
 			
 	def write(self, buf):
 		#self.iq.push(buf);
-		buf = bytes(buf)
-		buf = checksumLnBuf(buf);
+		#buf = bytearray(buf)
+		#buf = checksumLnBuf(buf);
+		if recvLnMsg(buf) is None:
+			self.logger.warn("Tried to send invalid packet: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
+			return
 		self.logger.debug("Push to send Queue: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)))
 		self.iq.put(buf)
 		

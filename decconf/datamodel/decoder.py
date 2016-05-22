@@ -7,7 +7,7 @@ import numpy as np
 from loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
 from loconet import LocoNet as LN
 
-from decoders.dec10001 import dec10001controller
+#from decoders.dec10001 import dec10001controller
 
 class Decoder(QtCore.QAbstractTableModel):
 	desc = {"10001": [[1, "Address", 1, 1], [6, "No configured pins", 1, 1], [7, "Manufacturer", 1, 0], [8, "Version", 1, 0], [9, "Pin configuration slot 1",1 ,1], [10, "Pin configuration slot 2",1,1], [32, "peri_conf_1[0]",1 ,1 ], [33, "peri_conf_1[1]", 1, 1]],
@@ -103,8 +103,11 @@ class Decoder(QtCore.QAbstractTableModel):
 		return None
 
 	def readAllCV(self):
-		for cv in Decoder.desc[str(self._class)]:
-			self.readCV(cv[0]);
+		for cv in Decoder.generalCVs():
+			self.readCV(cv);
+
+		#for cv in Decoder.desc[str(self._class)]:
+		#	self.readCV(cv[0]);
 			#sleep(0.1)
 			
 	def messageConfirmed(self, msg, reply):
@@ -124,11 +127,14 @@ class Decoder(QtCore.QAbstractTableModel):
 			self.cs.addToQueue(LNCVWriteMessage(writeModuleLNCV(self._class, self._address, cv, value), self))
 		
 	def setCV(self, cv, value):
-		self.CVs[str(cv)][0] = value
-		print("CVs:", self.CVs);
+		self.CVs[str(cv)] = value
+		if cv == 1:
+			self._address= value
+			
 		row = self.cv2row(cv)
 		print("cv: ", cv, "row: ", row)
-		self.dataChanged.emit(self.createIndex(row, 2), self.createIndex(row, 2))
+		if row is not None:
+			self.dataChanged.emit(self.createIndex(row, 2), self.createIndex(row, 2))
 		#self.emit(QtCore.SIGNAL("dataChanged()"));
 	
 	def getCV(self, cv):
@@ -165,7 +171,9 @@ class Decoder(QtCore.QAbstractTableModel):
 			return dec10001controller(self, tabwidget);
 		
 		return None
-		
+	
+	def generalCVs():
+		return [1,6,7];
 		
 class cvController(object):
 	"""docstring for cvController"""
@@ -199,18 +207,19 @@ class DecoderController(object):
 		self._classes = dict();
 		self.decoders = dict();
 		self.cvController = cvController;
-		self.tabwidget = tabwidget
+		self.tabwidget = tabwidget;
+		#self.plugins = plugins;
 
 		self.widget.setColumnCount(2)
 		self.widget.setHeaderLabels(['Art Nr', 'Description']);
 		
 		for cl in DecoderController.desc.keys():
 			self._classes[str(cl)] = (QtGui.QTreeWidgetItem(self.widget, [str(cl), DecoderController.desc[str(cl)]]), []);
-			#self.decoders[self._classes[str(cl)][0]] = [];
 			
 		self.widget.itemSelectionChanged.connect(self.select);
 		
 	def addDecoder(self, dec):
+		dec.parent = self.cvController
 		self._classes[str(dec._class)][1].append(dec._address);
 		treeitem = QtGui.QTreeWidgetItem(self._classes[str(dec._class)][0], [str(dec._address), "bla"])
 		print(self._classes[str(dec._class)][0])

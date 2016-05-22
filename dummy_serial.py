@@ -95,7 +95,7 @@ class dummyDecoder(object):
 			if lncvMsg['ReqId'] == LN.LNCV_REQID_CFGWRITE:
 				self.logger.info("Setting CV {} to {}".format(lncvMsg['lncvNumber'], lncvMsg['lncvValue']))
 				self.CVs[lncvMsg['lncvNumber']] = lncvMsg['lncvValue'];
-				resp  = bytearray.fromhex('b4ff7f');
+				resp  = bytearray.fromhex('b4ff7f00');
 				returnCode = LN.LNCV_LACK_OK
 				resp[1] = lncvMsg['OPC'] & 0x7f
 				resp = checksumLnBuf(resp);

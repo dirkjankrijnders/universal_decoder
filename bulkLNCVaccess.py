@@ -7,6 +7,8 @@ from time import sleep
 
 from locobuffer import LocoBuffer
 from dummy_serial import dummySerial
+import serial.tools.list_ports
+
 from loconet import *
 
 class CSVWriter(object):
@@ -69,18 +71,21 @@ def main():
 	else:
 		fid = open(args.filename[0], 'r');
 
-	nCV = 100;
+	nCV = 3;
 	lb = None;
 	writer = CSVWriter(fid, nCV - 1);
 	reader = CSVReader(fid, nCV - 1);
 	recvQueue = queue.Queue();
 	sendQueue = queue.Queue();
-	serial = None
+	_serial = serial.Serial(None, 57600);
 	if args.cs[0] == 'Dummy':
-		logger.info("Connecting to {} serial device".format("Dummy"))
-		serial = dummySerial();
+		logger.info("Connecting to {} _serial device".format("Dummy"))
+		_serial = dummySerial();
+	else:
+		_serial.port = args.cs[0];
+		_serial.open();
 
-	lb = LocoBuffer(serial, sendQueue, recvQueue);
+	lb = LocoBuffer(_serial, sendQueue, recvQueue);
 	
 	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
 

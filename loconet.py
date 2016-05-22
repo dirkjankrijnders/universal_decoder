@@ -83,6 +83,8 @@ class LocoNet(object):
 #	LNCV_MAX_MODULEADDR (65534)
 
 def recvLnMsg(buf):
+	bGotNewLength = 0 ;
+	print(buf)
 	for newByte in buf:
 		# Check if this is the beginning of a new packet
 		if( newByte & 0x80 ):
@@ -125,7 +127,7 @@ def recvLnMsg(buf):
 				#Buffer->Stats.RxErrors++ ;
 
 			else:
-				LocoNet.logger.warn("Invalid packet recieved: {}".format(accumlator) )
+				LocoNet.logger.warn("Invalid packet recieved: {}".format(accumulator) )
 			if( tempMsg != None ):
 				LocoNet.logger.debug("Packet recieved: 0x {}".format( " ".join("{:02x}".format(b) for b in tempMsg)));
 				return bytearray(tempMsg);
@@ -136,10 +138,12 @@ def recvLnMsg(buf):
 	return None ;
 	
 def checksumLnBuf(buf):
+	"""Replaces the last byte of buf with the checksum over the over bytes"""
 	CheckSum = LN_CHECKSUM_SEED ;
-	for newByte in buf:
+	for newByte in buf[:-1]:
 		CheckSum ^= newByte ;
-	return bytearray(buf + bytes([CheckSum]));
+	buf[-1] = CheckSum
+	return buf; #bytearray(buf + bytes([CheckSum]));
 
 def computeBytesFromPXCT(buf):
 	mask = 0x01;
@@ -205,7 +209,7 @@ def makeLNCVresponse(first, second, third, last, opc = LocoNet.OPC_PEER_XFER, sr
 	
 	buf = bytearray(struct.pack(LNCV_fmt, *pkt))
 	buf = computePXCTFromBytes(buf)
-	buf = checksumLnBuf(buf[:-1]);
+	buf = checksumLnBuf(buf);
 	return buf
 	
 class LNCVConfirmedMessage(object):
@@ -223,11 +227,10 @@ class LNCVConfirmedMessage(object):
 		self.send = False;
 
 	def match(self, reply):
-		#print("Compare: ", self.reply, " to ", reply)
-		#print(len(reply), " ?= ", len(self.mask))
 		if len(reply) != len(self.mask):
+			self.logger.debug("Wrong length: reply: {}, mask: {}".format(len(reply), len(self.mask)))
 			return False
-		#print("Length ok")
+		self.logger.debug("reply: {}, exp. reply: {}, mask: {}". format(" ".join("{:02x}".format(b) for b in reply), " ".join("{:02x}".format(b) for b in self.reply)," ".join("{:02x}".format(b) for b in self.mask)))
 		self.logger.debug('Comparing: {} == {}'.format(int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big'), (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big'))))
 		if ((int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big')) == (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big'))):
 			self.src.messageConfirmed(self, reply);
@@ -242,14 +245,15 @@ class LNCVReadMessage(LNCVConfirmedMessage):
 		reply = bytearray(msg);
 		reply[0] = 0xe5;
 		mask[0] = 0xff;
-		#print("MAsk:", mask)
+
 		super(LNCVReadMessage, self).__init__(msg, reply, mask, src);
 	
 class LNCVWriteMessage(LNCVConfirmedMessage):
 	"""docstring for LNCVReadMessage"""
 	def __init__(self, msg, src):
-		mask = bytearray(b'\0' * 4)
-		reply  = bytearray.fromhex('b4ff7fff');
+		#mask = bytearray(b'\0' * 4);
+		mask = bytes.fromhex('ffff0000');
+		reply  = bytearray.fromhex('b46d7fff');
 		reply[1] = msg[0] & 0x7f
 		super(LNCVWriteMessage, self).__init__(msg, reply, mask, src);
 		

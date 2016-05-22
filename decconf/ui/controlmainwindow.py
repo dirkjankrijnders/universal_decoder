@@ -9,10 +9,15 @@ from PySide import QtCore, QtGui
 import serial.tools.list_ports
 from appdirs import *
 
+from yapsy.PluginManager import PluginManager
+
 from decconf.ui.mainwindow import Ui_MainWindow
 from decconf.ui.prefdialog import PreferenceDialog
 #from decconf.datamodel.treemodel import TreeModel, TreeItem
-from decconf.datamodel.decoder import Decoder, DecoderController, cvController
+from decconf.datamodel.decoder import DecoderController, cvController
+from decconf.datamodel.CV import CVListModel
+from decconf.datamodel.CV import CVDelegate
+
 from dummy_serial import dummySerial
 
 from loconet import LocoNet as LN
@@ -48,6 +53,23 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self.config.read(self.configfile);
 		
 		self.logger = logging.getLogger('decconf');
+		self.logger.setLevel(logging.DEBUG)
+		logging.getLogger('yapsy').setLevel(logging.DEBUG)
+		# create console handler and set level to debug
+		ch = logging.StreamHandler()
+		ch.setLevel(logging.DEBUG)
+	
+		# create formatter
+		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	
+		# add formatter to ch
+		ch.setFormatter(formatter)
+	
+		# add ch to logger
+		self.logger.addHandler(ch)
+		
+		self.logger = logging.getLogger('decconf.gui');
+		self.logger.info('LNCV Access Gui version 1.0.');
 
 		self.serial = serial.Serial(None, 57600);
 		self.lb = None;
@@ -66,6 +88,8 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self.ui.powerControl.setCheckable(True);
 		self.ui.toolBar.addWidget(self.ui.comboBox);
 		self.ui.toolBar.addWidget(self.ui.connectserial);
+		
+		self.moduleDelegates = self.initModuleDelegates();
 		
 		portFound = False
 		for ii, port in enumerate(serial.tools.list_ports.comports()):
@@ -92,11 +116,12 @@ class ControlMainWindow(QtGui.QMainWindow):
 			self.detectModules();
 			
 	def connectserial(self):
-		self.decodercont.addDecoder(Decoder(10001, 126, self.lb));
+		#self.decodercont.addDecoder(Decoder(10001, 126, self.lb));
 		#self.recvQueue.put(bytes.fromhex('ED0F0105002150112700007F000021'));
 		if self.ui.connectserial.text() == "Connect":
 			port = self.ui.comboBox.currentText();
-			self.logger.info("Connecting!", port)
+			print("Connecting!", port)
+			#self.logger.info("Connecting!", port)
 			if port == 'Dummy':
 				self.serial = dummySerial();
 				self.ui.connectserial.setText("Disconnect");
@@ -133,7 +158,7 @@ class ControlMainWindow(QtGui.QMainWindow):
 	def detectModules(self):
 		if self.lb is not None:
 			buf = makeLNCVresponse(0xFFFF,0,0xFFFF, 0, opc = LN.OPC_IMM_PACKET, src = LN.LNCV_SRC_KPU, req = LN.LNCV_REQID_CFGREQUEST);
-			self.lb.write(buf[:-1])
+			self.lb.write(buf)
 			
 	def addClass(self, _class):
 		if str(_class) not in self.classes.keys():
@@ -165,9 +190,14 @@ class ControlMainWindow(QtGui.QMainWindow):
 			if pkt['SRC'] == LN.LNCV_SRC_MODULE and pkt['ReqId'] == LN.LNCV_REQID_CFGREAD:
 				if pkt['lncvNumber'] == 0:
 					if pkt['flags'] == 0:
-						self.decodercont.addDecoder(Decoder(pkt['deviceClass'], pkt['lncvValue'], self.lb));
+						print(self.classDelegateMapping.keys());
+						if str(pkt['deviceClass']) in self.classDelegateMapping.keys():
+							dd = self.classDelegateMapping[str(pkt['deviceClass'])]
+						else:
+							dd = CVDelegate();
+						self.decodercont.addDecoder(CVListModel(pkt['deviceClass'], pkt['lncvValue'], cs = self.lb, descriptionDelegate = dd));
 					else:
-						print("ACK on Programming")
+						self.logger.debug("ACK on Programming")
 						self.decodercont.selectedDecoder().programmingAck(pkt);
 				else:
 					self.decodercont.selectedDecoder().setCV(pkt['lncvNumber'], pkt['lncvValue']);
@@ -202,4 +232,21 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self._helpMenu.addAction(self._aboutAction)
 		self._helpMenu.addAction(self._prefAction)
 		self._menuBar.show()
-		print("Added menu")
+		#print("Added menu")
+	
+	def initModuleDelegates(self):
+		self.manager = PluginManager(); #categories_filter={ "Modules": CVDelegate})
+		self.manager.setPluginPlaces(['decoders']);
+		
+		# Load plugins
+		self.manager.locatePlugins()
+		self.manager.loadPlugins()
+		self.classDelegateMapping = dict();
+		# Activate all loaded plugins
+		for pluginInfo in self.manager.getAllPlugins():
+		   self.manager.activatePluginByName(pluginInfo.name)
+		   self.classDelegateMapping[str(pluginInfo.details.get('Decoder', 'Class'))] = pluginInfo.plugin_object;
+
+		for plugin in self.manager.getAllPlugins():
+			self.logger.info("Loaded plugin: {} - {}".format(plugin.details.get('Decoder', 'Class'), plugin.name));
+		
