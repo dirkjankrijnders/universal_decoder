@@ -1,0 +1,12 @@
+[Core]
+Name = Universal LN Module
+Module = 10001/10001.py
+
+[Decoder]
+Class = 10001
+
+[Documentation]
+Author = Dirkjan Krijnders
+Version = 0.1
+Description = Universal LocoNet module
+Website = http://github.com
