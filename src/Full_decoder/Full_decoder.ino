@@ -5,7 +5,7 @@ If serial output is desired uncommment the #undef line. For production, i.e.
 without computer connected this line should be commented out. 
 */
 #define DEBUG_OUTPUT
-//#undef DEBUG_OUTPUT
+#undef DEBUG_OUTPUT
 
 #ifdef DEBUG_OUTPUT
 #define USE_SERIAL
@@ -67,6 +67,35 @@ void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
 }
 
+void configureSlot(uint8_t slot) {
+  uint8_t pin_config;
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
+
+    pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
+    pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
+    address = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.address));
+    switch (pin_config) {
+      case 2: //Servo
+        //ServoSwitch(i,0);
+        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos2));
+        speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
+        fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
+        fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
+        confpins[slot] = new ServoSwitch(slot, pin, address, pos1, pos2, speed, servoEnablePin, fbslot1, fbslot2);
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
+        break;
+      case 1: // Input
+        confpins[slot] = new InputPin(slot, pin, address);
+        break;
+      default:
+        confpins[slot] = new ConfiguredPin(slot, pin, address);
+        break;
+    }
+    DEBUG("Pin #");
+    DEBUGLN(i);
+    confpins[slot]->print();
+}
 void setup() {
   pinMode( servoEnablePin, OUTPUT);
   disableServos();
@@ -81,36 +110,11 @@ void setup() {
   LocoNet.init(LOCONET_TX_PIN);
   
   uint8_t i = 0;
-  uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
   DEBUG("Max # of pins:");
   DEBUGLN(MAX);
    
   for (i = 0; i < MAX; i++) {
-    pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[i]));
-    pin   = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.arduinopin));
-    address = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.address));
-    switch (pin_config) {
-      case 2: //Servo
-        //ServoSwitch(i,0);
-        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pos1));
-        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pos2));
-        speed = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.speed));
-        fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot1));
-        fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot2));
-        confpins[i] = new ServoSwitch(i, pin, address, pos1, pos2, speed, servoEnablePin, fbslot1, fbslot2);
-		    confpins[i]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.state)));
-        break;
-      case 1: // Input
-        confpins[i] = new InputPin(i, pin, address);
-        break;
-      default:
-        confpins[i] = new ConfiguredPin(i, pin, address);
-        break;
-    }
-    DEBUG("Pin #");
-    DEBUGLN(i);
-    confpins[i]->print();
+    configureSlot(i);
   }
   programmingMode = false;
 }
@@ -295,6 +299,9 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);      
       DEBUG(read_cv(&_CV, lncvAddress));
+      uint8_t slot = cv2slot(lncvAddress);
+      delete(confpins[slot]);
+      configureSlot(slot);
       //lncv[lncvAddress] = lncvValue;
       return LNCV_LACK_OK;
     }
