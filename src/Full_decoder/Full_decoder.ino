@@ -93,7 +93,7 @@ void configureSlot(uint8_t slot) {
         break;
     }
     DEBUG("Pin #");
-    DEBUGLN(i);
+    DEBUGLN(slot);
     confpins[slot]->print();
 }
 void setup() {
