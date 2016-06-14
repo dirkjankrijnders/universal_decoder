@@ -2,7 +2,7 @@
 
 import unittest
 
-from loconet import *
+from decconf.protocols.loconet import *
 
 class TestLocoNet(unittest.TestCase):
 	def testRecvLnMsg(self):

@@ -5,11 +5,11 @@ import logging
 import queue
 from time import sleep
 
-from locobuffer import LocoBuffer
+from decconf.interfaces.locobuffer import LocoBuffer
 from dummy_serial import dummySerial
 import serial.tools.list_ports
 
-from loconet import *
+from decconf.protocols.loconet import *
 
 class CSVWriter(object):
 	def __init__(self, fid, ncv):

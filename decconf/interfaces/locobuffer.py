@@ -2,7 +2,7 @@ import logging
 import threading
 import collections
 
-from loconet import recvLnMsg, checksumLnBuf
+from decconf.protocols.loconet import recvLnMsg, checksumLnBuf
 
 class LocoBuffer(object):
 	def __init__(self, serial, inputQueue, outputQueue):

@@ -20,10 +20,10 @@ from decconf.datamodel.CV import CVDelegate
 
 from dummy_serial import dummySerial
 
-from loconet import LocoNet as LN
-from loconet import makeLNCVresponse, parseLNCVmsg
+from decconf.protocols.loconet import LocoNet as LN
+from decconf.protocols.loconet import makeLNCVresponse, parseLNCVmsg
 
-from locobuffer import LocoBuffer
+from decconf.interfaces.locobuffer import LocoBuffer
 
 class RecieveThread(QtCore.QThread):
 	dataReady = QtCore.Signal(object)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import unittest
-from loconet import LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, readModuleLNCV, startModuleLNCVProgramming, stopModuleLNCVProgramming, makeLNCVresponse, checksumLnBuf
+from decconf.protocols.loconet import LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, readModuleLNCV, startModuleLNCVProgramming, stopModuleLNCVProgramming, makeLNCVresponse, checksumLnBuf
 
 class TestLNCV(unittest.TestCase):
 	def setUp(self):

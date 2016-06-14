@@ -6,8 +6,8 @@ import numpy as np
 
 from yapsy.IPlugin import IPlugin
 
-from loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
-from loconet import LocoNet as LN
+from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
+from decconf.protocols.loconet import LocoNet as LN
 
 #from decoders.dec10001 import dec10001controller
 
