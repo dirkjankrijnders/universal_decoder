@@ -91,24 +91,26 @@ def main():
 	lb = LocoBuffer(_serial, sendQueue, recvQueue);
 	
 	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
+	try:
+		if args.command[0] == 'read':
+			
+			for cv in range(1,nCV):
+				lb.addToQueue(LNCVReadMessage(readModuleLNCV(args.moduleclass[0], args.address[0], cv), writer))
+			while writer.ncv > 0:
+				pass
+			
+		if args.command[0] == 'write':
+			ncv = 0;
+			for line in fid:
+				vals = line.split(',');
+				lb.addToQueue(LNCVWriteMessage(writeModuleLNCV(args.moduleclass[0], args.address[0], int(vals[0]), int(vals[1])), reader))
+				ncv += 1;
+			while reader.ncv < ncv:
+				pass
+	except KeyboardInterrupt:
+		pass
 
-	if args.command[0] == 'read':
-		
-		for cv in range(1,nCV):
-			lb.addToQueue(LNCVReadMessage(readModuleLNCV(args.moduleclass[0], args.address[0], cv), writer))
-		while writer.ncv > 0:
-			pass
-		
-	if args.command[0] == 'write':
-		ncv = 0;
-		for line in fid:
-			vals = line.split(',');
-			lb.addToQueue(LNCVWriteMessage(writeModuleLNCV(args.moduleclass[0], args.address[0], int(vals[0]), int(vals[1])), reader))
-			ncv += 1;
-		while reader.ncv < ncv:
-			pass
-
-	lb.write(stopModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
+	#lb.addToQueue(stopModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
 
 	sleep(1)
 	fid.close();
