@@ -84,7 +84,10 @@ def main():
 	else:
 		_serial.port = args.cs[0];
 		_serial.open();
-
+	
+	while not _serial.is_open:
+		pass
+		
 	lb = LocoBuffer(_serial, sendQueue, recvQueue);
 	
 	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
