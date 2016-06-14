@@ -5,8 +5,8 @@ import queue
 
 import numpy as np
 
-from loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, checksumLnBuf, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage, makeLNCVresponse
-from loconet import LocoNet as LN
+from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, checksumLnBuf, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage, makeLNCVresponse
+from decconf.protocols.loconet import LocoNet as LN
 
 class dummySerial(object):
 	def __init__(self):
