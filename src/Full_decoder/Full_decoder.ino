@@ -70,7 +70,9 @@ void reportSlot(uint16_t slot, uint16_t state) {
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
-
+void setSlot(uint16_t slot, uint16_t state) {
+  confpins[slot]->set(state, 0);
+}
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
 }
@@ -90,11 +92,16 @@ void configureSlot(uint8_t slot) {
         speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
-        confpins[slot] = new ServoSwitch(slot, pin, address, pos1, pos2, speed, servoEnablePin, fbslot1, fbslot2);
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pwrslot)) && 0xFF;
+        confpins[slot] = new ServoSwitch(slot, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
       case 1: // Input
         confpins[slot] = new InputPin(slot, pin, address);
+        break;
+      case 3: // Output
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[i].output.options)) & 0x01) == 0x01);
+        confpins[slot] = new OutputPin(slot, pin, address, pin_config);
         break;
       default:
         confpins[slot] = new ConfiguredPin(slot, pin, address);
@@ -229,13 +236,13 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
 			return LNCV_LACK_OK;
 		} else if (lncvAddress < 320) {
         lncvValue = read_cv(&_CV, lncvAddress);
-        
+
         DEBUG("\nEeprom address: ");
         DEBUG(((uint16_t)&(_CV.address)+cv2address(lncvAddress)));
         DEBUG(" LNCV Value: ");
         DEBUG(lncvValue);
         DEBUG("\n");
-        
+
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
         lncvValue = freeRam();
@@ -273,15 +280,15 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         return LNCV_LACK_ERROR_UNSUPPORTED;
       }
     } else {
-      
+
       DEBUG("ArtNr invalid.\n");
-      
+
       return -1;
     }
   } else {
-    
+
     DEBUG("Ignoring Request.\n");
-    
+
     return -1;
   }
 }
@@ -336,7 +343,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG(cv2address(lncvAddress));
       DEBUG(bytesizeCV(lncvAddress));
       DEBUG((uint8_t)lncvValue);
-      write_cv(&_CV, lncvAddress, lncvValue);      
+      write_cv(&_CV, lncvAddress, lncvValue);
       DEBUG(read_cv(&_CV, lncvAddress));
       uint8_t slot = cv2slot(lncvAddress);
       delete(confpins[slot]);
@@ -350,9 +357,9 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
 
   }
   else {
-    
+
     DEBUG("Artnr Invalid.\n");
-    
+
     return -1;
   }
 }
@@ -365,39 +372,39 @@ void commitLNCVUpdate() {
    * Notifies the code on the reception of a request to end programming mode
    */
 void notifyLNCVprogrammingStop(uint16_t ArtNr, uint16_t ModuleAddress) {
-  
+
   DEBUG("notifyLNCVprogrammingStop ");
-      
+
   if (programmingMode) {
     if (ArtNr == ARTNR && ModuleAddress == eeprom_read_byte(&_CV.address)) {
       programmingMode = false;
-      
+
       DEBUG("End Programing Mode.\n");
-          
+
 
       commitLNCVUpdate();
     }
     else {
       if (ArtNr != ARTNR) {
-        
+
         DEBUG("Wrong Artnr.\n");
-            
+
 
         return;
       }
       if (ModuleAddress != eeprom_read_byte(&_CV.address)) {
-        
+
         DEBUG("Wrong Module Address.\n");
-            
+
 
         return;
       }
     }
   }
   else {
-    
+
     DEBUG("Ignoring Request.\n");
-        
+
 
   }
 }
