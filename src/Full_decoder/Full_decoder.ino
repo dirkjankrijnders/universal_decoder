@@ -62,7 +62,9 @@ void reportSlot(uint16_t slot, uint16_t state) {
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
-
+void setSlot(uint16_t slot, uint16_t state) {
+  confpins[slot]->set(state, 0);
+}
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
 }
@@ -82,7 +84,7 @@ void setup() {
   
   uint8_t i = 0;
   uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin;
   DEBUG("Max # of pins:");
   DEBUGLN(MAX);
    
@@ -98,11 +100,16 @@ void setup() {
         speed = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.speed));
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.fbslot2));
-        confpins[i] = new ServoSwitch(i, pin, address, pos1, pos2, speed, servoEnablePin, fbslot1, fbslot2);
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pwrslot)) && 0xFF;
+        confpins[i] = new ServoSwitch(i, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
 		    confpins[i]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.state)));
         break;
       case 1: // Input
         confpins[i] = new InputPin(i, pin, address);
+        break;
+      case 3: // Output
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[i].output.options)) & 0x01) == 0x01);
+        confpins[i] = new OutputPin(i, pin, address, pin_config);
         break;
       default:
         confpins[i] = new ConfiguredPin(i, pin, address);
