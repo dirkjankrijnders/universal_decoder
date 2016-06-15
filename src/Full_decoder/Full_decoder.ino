@@ -52,6 +52,14 @@ boolean programmingMode;
 
 #define LOCONET_TX_PIN 5
 
+extern int __bss_start, __bss_end;
+
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+};
+
 void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG("Reporting slot ");
   DEBUG(slot);
@@ -224,6 +232,37 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG(lncvValue);
         DEBUG("\n");
         
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1024) {
+        lncvValue = freeRam();
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1025) {
+        lncvValue = __bss_start;
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1026) {
+        lncvValue = __bss_end;
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1027) {
+        lncvValue = SP;
+        return LNCV_LACK_OK;
+      } else if ((lncvAddress > 1027) && (lncvAddress < 1033)){
+        LnBufStats* stats = LocoNet.getStats();
+        switch (lncvAddress) {
+          case 1028:
+          lncvValue = stats->RxPackets;
+          break;
+          case 1029:
+          lncvValue = stats->RxErrors;
+          break;
+          case 1030:
+          lncvValue = stats->TxPackets;
+          break;
+          case 1031:
+          lncvValue = stats->TxErrors;
+          break;
+          case 1032:
+          lncvValue = stats->Collisions;
+        }
         return LNCV_LACK_OK;
       } else {
         // Invalid LNCV address, request a NAXK
