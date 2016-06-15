@@ -245,6 +245,11 @@ class LNCVReadMessage(LNCVConfirmedMessage):
 		reply = bytearray(msg);
 		reply[0] = 0xe5;
 		mask[0] = 0xff;
+		mask[1] = 0xff;
+		mask[7] = 0xff;
+		mask[8] = 0xff;
+		mask[9] = 0xff;
+		mask[10] = 0xff;
 
 		super(LNCVReadMessage, self).__init__(msg, reply, mask, src);
 	
