@@ -235,12 +235,16 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
         lncvValue = freeRam();
+        return LNCV_LACK_OK;
       } else if (lncvAddress == 1025) {
         lncvValue = __bss_start;
+        return LNCV_LACK_OK;
       } else if (lncvAddress == 1026) {
         lncvValue = __bss_end;
+        return LNCV_LACK_OK;
       } else if (lncvAddress == 1027) {
         lncvValue = SP;
+        return LNCV_LACK_OK;
       } else if ((lncvAddress > 1027) && (lncvAddress < 1033)){
         LnBufStats* stats = LocoNet.getStats();
         switch (lncvAddress) {
@@ -259,6 +263,7 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
           case 1032:
           lncvValue = stats->Collisions;
         }
+        return LNCV_LACK_OK;
       } else {
         // Invalid LNCV address, request a NAXK
         return LNCV_LACK_ERROR_UNSUPPORTED;
