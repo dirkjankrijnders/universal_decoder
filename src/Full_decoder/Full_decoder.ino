@@ -5,7 +5,7 @@ If serial output is desired uncommment the #undef line. For production, i.e.
 without computer connected this line should be commented out. 
 */
 #define DEBUG_OUTPUT
-//#undef DEBUG_OUTPUT
+#undef DEBUG_OUTPUT
 
 #ifdef DEBUG_OUTPUT
 #define USE_SERIAL
