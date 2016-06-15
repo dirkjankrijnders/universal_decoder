@@ -84,7 +84,7 @@ class LocoNet(object):
 
 def recvLnMsg(buf):
 	bGotNewLength = 0 ;
-	print(buf)
+
 	for newByte in buf:
 		# Check if this is the beginning of a new packet
 		if( newByte & 0x80 ):
