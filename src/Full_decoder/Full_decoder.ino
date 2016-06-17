@@ -31,9 +31,6 @@ decoder_conf_t EEMEM _CV = {
 #define MAX 24
 ConfiguredPin* confpins[MAX];
 
-/* Power to pins management */
-#define servoEnablePin 15
-
 void enableServos();
 void disableServos();
 
@@ -112,8 +109,6 @@ void configureSlot(uint8_t slot) {
     confpins[slot]->print();
 }
 void setup() {
-  pinMode( servoEnablePin, OUTPUT);
-  disableServos();
 #ifdef USE_SERIAL
   Serial.begin(57600);
   while (!Serial){
@@ -173,15 +168,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
       DEBUG("\n");
     }
   }
-  
-}
 
-void enableServos() {
-	digitalWrite(servoEnablePin, HIGH);
-}
-
-void disableServos() {
-	digitalWrite(servoEnablePin, LOW);
 }
 
 void dumpPacket(UhlenbrockMsg & ub) {
