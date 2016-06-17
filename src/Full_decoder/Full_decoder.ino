@@ -79,7 +79,7 @@ void reportSensor(uint16_t address, bool state) {
 
 void configureSlot(uint8_t slot) {
   uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin;
 
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
@@ -92,7 +92,7 @@ void configureSlot(uint8_t slot) {
         speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
-        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pwrslot)) && 0xFF;
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pwrslot)) && 0xFF;
         confpins[slot] = new ServoSwitch(slot, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
@@ -100,7 +100,7 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new InputPin(slot, pin, address);
         break;
       case 3: // Output
-        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[i].output.options)) & 0x01) == 0x01);
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
         confpins[slot] = new OutputPin(slot, pin, address, pin_config);
         break;
       default:
