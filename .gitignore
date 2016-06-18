@@ -1,2 +1,11 @@
 lib
 bin
+Decoder_configuration.egg-info
+accdecwidget.py
+mainwindow.py
+ui_accdecwidget.py
+ui_mainwindow.py
+ui_preferences.py
+Decoder_Configurator.egg-info
+decconf.egg-info
+preferences.py
