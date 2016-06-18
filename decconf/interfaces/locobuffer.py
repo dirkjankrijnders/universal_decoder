@@ -12,7 +12,8 @@ class LocoBuffer(object):
 		self.oq = outputQueue;
 		self.mq = collections.deque();
 		self.running = True;
-			
+		self.lastsend = b'';
+		
 		self.reader = threading.Thread(None, self.read);
 		self.reader.daemon = True
 		self.reader.start();
@@ -32,17 +33,20 @@ class LocoBuffer(object):
 		while self.running:
 			buf += self.serial.read(1);
 			if recvLnMsg(buf):
-				self.logger.debug("Recv LN Msg: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
-				if (len(self.mq) > 0):
-					self.logger.debug("Match queue: {}".format(self.mq))
-				if (len(self.mq) > 0) and self.mq[0].match(buf):
-					self.mq.popleft();
-					self.logger.debug("Match queue: {}".format(self.mq))
+				if buf == self.lastsend:
+					pass
+				else:
+					self.logger.debug("Recv LN Msg: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
+					if (len(self.mq) > 0):
+						self.logger.debug("Match queue: {}".format(self.mq))
+					if (len(self.mq) > 0) and self.mq[0].match(buf):
+						self.mq.popleft();
+						self.logger.debug("Match queue: {}".format(self.mq))
+                	
+					else:
+						self.oq.put(bytearray(buf));
 					if (len(self.mq) > 0):
 						self.iq.put(self.mq[0].msg);
-
-				else:
-					self.oq.put(bytearray(buf));
 				buf = b"";
 			
 	def write(self, buf):
