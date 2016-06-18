@@ -34,11 +34,23 @@ class CSVReader(object):
 		#lncv = parseLNCVmsg(bytearray(reply));
 		#print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']), file=self.fid);
 		self.ncv += 1;
-		
+
+class StatsPrinter(object):
+	def __init__(self, fid, ncv):
+		super(StatsPrinter, self).__init__();
+		self.ncv = 0;
+		self.fid = fid;
+
+
+	def messageConfirmed(self, msg, reply):
+		lncv = parseLNCVmsg(bytearray(reply));
+		print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']));
+		self.ncv -=1;
+
 def main():
 	"""docstring for main"""
 	parser = argparse.ArgumentParser(description='Bulk read/write LNCVs')
-	parser.add_argument('command', choices=['read', 'write'], metavar='command', type=str, nargs=1,
+	parser.add_argument('command', choices=['read', 'write', 'stats'], metavar='command', type=str, nargs=1,
 	                   help='read or write')
 	parser.add_argument('--moduleclass',  type=int, nargs=1, required=True, help='Article number');
 	parser.add_argument('--address',  type=int, nargs=1, required=True, help='Module address');
@@ -68,13 +80,16 @@ def main():
 	fid = None;
 	if args.command[0] == 'read':
 		fid = open(args.filename[0], 'w');
-	else:
+		reader = CSVReader(fid, nCV - 1);
+	elif args.command[0] == 'write':
 		fid = open(args.filename[0], 'r');
-
-	nCV = 3;
+		writer = CSVWriter(fid, nCV - 1);
+	else:
+		fid = None;
+		printer = StatsPrinter(None, 0);
+	nCV = 400;
 	lb = None;
-	writer = CSVWriter(fid, nCV - 1);
-	reader = CSVReader(fid, nCV - 1);
+
 	recvQueue = queue.Queue();
 	sendQueue = queue.Queue();
 	_serial = serial.Serial(None, 57600);
@@ -89,8 +104,18 @@ def main():
 		pass
 		
 	lb = LocoBuffer(_serial, sendQueue, recvQueue);
-	
+
+	#lb.addToQueue(LNCVWriteMessage(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]), reader));
 	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
+	#lb.addToQueue(LNCVWriteMessage(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]), reader));
+	#lb.addToQueue(LNCVWriteMessage(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]), reader));
+	sleep(1);
+	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
+	sleep(1);
+	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
+	sleep(1);
+	lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
+
 	try:
 		if args.command[0] == 'read':
 			
@@ -107,13 +132,21 @@ def main():
 				ncv += 1;
 			while reader.ncv < ncv:
 				pass
+
+		if args.command[0] == 'stats':
+			printer.ncv = 9
+			for cv in range(1024, 1033):
+				lb.addToQueue(LNCVReadMessage(readModuleLNCV(args.moduleclass[0], args.address[0], cv), printer))
+			while printer.ncv > 0:
+				pass
 	except KeyboardInterrupt:
 		pass
 
 	#lb.addToQueue(stopModuleLNCVProgramming(args.moduleclass[0], args.address[0]));
 
 	sleep(1)
-	fid.close();
-	
+	if fid is not None:
+		fid.close();
+
 if __name__ == '__main__':
 	main()
