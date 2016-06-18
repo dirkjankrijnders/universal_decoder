@@ -18,12 +18,12 @@ class I10001(cv.CVDelegate):
 		return [1,2,3,4,5,6,7,8];
 	
 	def cvDescription(self, cv):
-		desc = ['', 'Address', 'bla'];
+		desc = ['', 'Address', 'bla', '', '','',"No configured pins", "Manufacturer", "Version", "Pin configuration slot 1"];
 		if cv < len(desc):
 			return desc[cv];
 		
 		if cv > 31:
-			slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Res. 3"];
+			slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Power slot"];
 			slot, slotcv = cv2slot(cv);
 			return "Slot {}, {}".format(slot, slotcvdesc[slotcv]);
 		return super(I10001, self).cvDescription(cv);
@@ -40,5 +40,8 @@ class I10001(cv.CVDelegate):
 				for cv2 in [0, 1]:
 					self.parent.readCV(slot*10 + 32 + cv2);
 			if value == 2: # Servo pin
-				for cv2 in [0, 1, 2, 3, 4,7,8]:
+				for cv2 in [0, 1, 2, 3, 4,7,8,9]:
+					self.parent.readCV(slot*10 + 32 + cv2);
+			if value == 3: # Output pin
+				for cv2 in [0, 1, 2]:
 					self.parent.readCV(slot*10 + 32 + cv2);
