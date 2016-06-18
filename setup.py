@@ -14,7 +14,7 @@ from setuptools import Command
 
 from buildqt import BuildQt
 
-setup(name='Decoder Configurator',
+setup(name='decconf',
       version='1.0',
       description='PythSoft Loconet Decoder configurtion',
       author='Dirkjan Krijnders',
@@ -26,7 +26,7 @@ setup(name='Decoder Configurator',
       install_requires=['appdirs', 'yapsy', 'pyserial'],
       entry_points={
             'gui_scripts': [
-                  'decconf=decconf:main',
+                  'decconf=entry_points.decoderconf:main',
                   ],
             'console_scripts': [
                   'bulkLNCVAccess=bulkLNCVaccess:main',
