@@ -1,16 +1,20 @@
 import logging
 import threading
 import collections
+from queue import Queue
 
-from decconf.protocols.loconet import recvLnMsg, checksumLnBuf
+from decconf.protocols.loconet import recvLnMsg, checksumLnBuf, LNMessage
 
 class LocoBuffer(object):
+	IDLE = 0;
+	WAITING = 1;
+	
 	def __init__(self, serial, inputQueue, outputQueue):
 		self.logger = logging.getLogger('decconf.LocoBuffer')
 		self.serial = serial;
 		self.iq = inputQueue;
 		self.oq = outputQueue;
-		self.mq = collections.deque();
+		self.mq = Queue(); #collections.deque();
 		self.running = True;
 		self.lastsend = b'';
 		
@@ -22,11 +26,13 @@ class LocoBuffer(object):
 		self.writer.daemon = True
 		self.writer.start();
 		
+		self.expectCondition = threading.Condition();
+		self.expectMessage = None;
 		
 	def addToQueue(self, msg):
-		self.mq.append(msg);
-		if len(self.mq) == 1:
-			self.iq.put(self.mq[0].msg);
+		self.mq.put(msg);
+		#if len(self.mq) == 1:
+		#	self.iq.put(self.mq[0].msg);
 	
 	def read(self):
 		buf = b""
@@ -37,16 +43,14 @@ class LocoBuffer(object):
 					pass
 				else:
 					self.logger.debug("Recv LN Msg: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
-					if (len(self.mq) > 0):
-						self.logger.debug("Match queue: {}".format(self.mq))
-					if (len(self.mq) > 0) and self.mq[0].match(buf):
-						self.mq.popleft();
-						self.logger.debug("Match queue: {}".format(self.mq))
-                	
-					else:
+					#if not self.mq.empty() and self.mq[0].match(buf): # We have a expected reply, pop the message
+					if self.expectMessage is not None and self.expectMessage.match(buf):
+						self.expectCondition.acquire();
+						self.expectCondition.notify_all();
+						self.logger.debug("Matched! Match queue: {}".format(self.mq))
+						self.expectCondition.release();	
+					else: # Not a matched msg, so put it on the incoming queue for someone else to deal with it.
 						self.oq.put(bytearray(buf));
-					if (len(self.mq) > 0):
-						self.iq.put(self.mq[0].msg);
 				buf = b"";
 			
 	def write(self, buf):
@@ -57,11 +61,17 @@ class LocoBuffer(object):
 			self.logger.warn("Tried to send invalid packet: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
 			return
 		self.logger.debug("Push to send Queue: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)))
-		self.iq.put(buf)
+		self.mq.put(LNMessage(buf));
 		
 	def writet(self):
 		while self.running:
-			buf = self.iq.get();
-			self.logger.debug("Sending to serial: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)))
-			self.serial.write(buf);
-			self.iq.task_done();
+			msg = self.mq.get();
+			self.logger.debug("Sending to serial: 0x {}".format( " ".join("{:02x}".format(b) for b in msg.msg)))
+			self.serial.write(msg.msg);
+			if msg.expectReply:
+				self.expectCondition.acquire();
+				self.expectMessage = msg;
+				if not self.expectCondition.wait(1): # Got a time-out, put the message back on the queue
+					self.mq.put(msg);
+				self.expectCondition.release();
+			#self.iq.task_done();

@@ -181,6 +181,13 @@ def parseLNCVmsg(buf):
 	else:
 		return None
 
+class LNMessage(object):
+	"""docstring for LNMessage"""
+	def __init__(self, buf, expectReply = False):
+		super(LNMessage, self).__init__();
+		self.msg = buf
+		self.expectReply = expectReply
+		
 def startModuleLNCVProgramming(deviceClass, address):
 	return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PRON, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST);
 
@@ -212,11 +219,10 @@ def makeLNCVresponse(first, second, third, last, opc = LocoNet.OPC_PEER_XFER, sr
 	buf = checksumLnBuf(buf);
 	return buf
 	
-class LNCVConfirmedMessage(object):
+class LNCVConfirmedMessage(LNMessage):
 	def __init__(self, msg, reply, mask, src, retry = 1):
-		super(LNCVConfirmedMessage, self).__init__();
+		super(LNCVConfirmedMessage, self).__init__(msg, True);
 		
-		self.msg = msg
 		self.reply = reply
 		self.mask = mask
 		self.src = src
