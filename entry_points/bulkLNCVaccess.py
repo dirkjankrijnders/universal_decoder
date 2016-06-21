@@ -78,16 +78,18 @@ def main():
 	logger.info('Bulk LNCV Access version 1.0.');
 	logger.debug('Config: {}'.format(args));
 	fid = None;
-	if args.command[0] == 'read':
-		fid = open(args.filename[0], 'w');
-		reader = CSVReader(fid, nCV - 1);
-	elif args.command[0] == 'write':
+
+	nCV = 320;
+
+	if args.command[0] == 'write':
 		fid = open(args.filename[0], 'r');
+		reader = CSVReader(fid, nCV - 1);
+	elif args.command[0] == 'read':
+		fid = open(args.filename[0], 'w');
 		writer = CSVWriter(fid, nCV - 1);
 	else:
 		fid = None;
 		printer = StatsPrinter(None, 0);
-	nCV = 400;
 	lb = None;
 
 	recvQueue = queue.Queue();
