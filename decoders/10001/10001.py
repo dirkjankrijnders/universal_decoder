@@ -23,8 +23,16 @@ class I10001(cv.CVDelegate):
 			return desc[cv];
 		
 		if cv > 31:
-			slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Power slot"];
 			slot, slotcv = cv2slot(cv);
+			if self.parent.CVs[9+slot] == 1:
+				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
+			elif self.parent.CVs[9+slot] == 2:
+				slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Power slot"];
+			elif self.parent.CVs[9+slot] == 3:
+				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
+			else:
+				slotcvdesc = ["Unconfigured", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
+			
 			return "Slot {}, {}".format(slot, slotcvdesc[slotcv]);
 		return super(I10001, self).cvDescription(cv);
 	
