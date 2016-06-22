@@ -1,4 +1,5 @@
 import configparser
+import copy
 import logging
 import os
 import queue
@@ -192,7 +193,7 @@ class ControlMainWindow(QtGui.QMainWindow):
 					if pkt['flags'] == 0:
 						print(self.classDelegateMapping.keys());
 						if str(pkt['deviceClass']) in self.classDelegateMapping.keys():
-							dd = self.classDelegateMapping[str(pkt['deviceClass'])]
+							dd = copy.copy(self.classDelegateMapping[str(pkt['deviceClass'])])
 						else:
 							dd = CVDelegate();
 						self.decodercont.addDecoder(CVListModel(pkt['deviceClass'], pkt['lncvValue'], cs = self.lb, descriptionDelegate = dd));
