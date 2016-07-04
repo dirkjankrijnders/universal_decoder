@@ -89,7 +89,7 @@ void configureSlot(uint8_t slot) {
         speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
-        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pwrslot)) && 0xFF;
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pwrslot));
         confpins[slot] = new ServoSwitch(slot, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
