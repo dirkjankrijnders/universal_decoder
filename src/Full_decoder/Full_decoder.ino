@@ -100,6 +100,15 @@ void configureSlot(uint8_t slot) {
         pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
         confpins[slot] = new OutputPin(slot, pin, address, pin_config);
         break;
+      case 4: // Dual action
+        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos2));
+        speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
+        pin_config = eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options));
+
+        confpins[slot] = new DualAction(slot, pin, address, pos1, pos2, speed, pin_config);
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
+        break;
       default:
         confpins[slot] = new ConfiguredPin(slot, pin, address);
         break;
