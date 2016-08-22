@@ -53,3 +53,6 @@ class I10001(cv.CVDelegate):
 			if value == 3: # Output pin
 				for cv2 in [0, 1, 2]:
 					self.parent.readCV(slot*10 + 32 + cv2);
+			if value == 4: # Dual action pin
+				for cv2 in [0, 1, 2, 3, 4, 5, 6]:
+					self.parent.readCV(slot*10 + 32 + cv2);
