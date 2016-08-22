@@ -130,6 +130,8 @@ def main():
 			ncv = 0;
 			for line in fid:
 				vals = line.split(',');
+				if vals[1] == '':
+					vals[1] = 0;
 				lb.addToQueue(LNCVWriteMessage(writeModuleLNCV(args.moduleclass[0], args.address[0], int(vals[0]), int(vals[1])), reader))
 				ncv += 1;
 			while reader.ncv < ncv:
