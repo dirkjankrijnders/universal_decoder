@@ -29,7 +29,7 @@ setup(name='decconf',
                   'decconf=entry_points.decoderconf:main',
                   ],
             'console_scripts': [
-                  'bulkLNCVAccess=bulkLNCVaccess:main',
+                  'bulkLNCVAccess=entry_points.bulkLNCVaccess:main',
                   ],
             },
 )
