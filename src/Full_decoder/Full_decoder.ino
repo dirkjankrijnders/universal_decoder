@@ -23,6 +23,7 @@ without computer connected this line should be commented out.
 #include "decoder_conf.h"
 #include "configuredpins.h"
 #include "cvaccess.h"
+#include "bus_configuredpins.h"
 
 decoder_conf_t EEMEM _CV = {
 #include "default_conf.h"
@@ -30,6 +31,20 @@ decoder_conf_t EEMEM _CV = {
 
 #define MAX 24
 ConfiguredPin* confpins[MAX];
+
+#include "Adafruit_TLC5947.h"
+
+// How many boards do you have chained?
+#define NUM_TLC5974 1
+
+#define data   4
+#define clock   5
+#define latch   6
+#define oe  -1  // set to -1 to not use the enable pin (its optional)
+
+Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
+int channel, pwm;
+
 
 void enableServos();
 void disableServos();
@@ -110,6 +125,10 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new DualAction(slot, pin, address, pos1, pos2, speed, pin_config);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
+      case 101: // TLC5947 PWM LED Controller.
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
+        confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, 1000);
+        break;       
       default:
         confpins[slot] = new ConfiguredPin(slot, pin, address);
         break;
