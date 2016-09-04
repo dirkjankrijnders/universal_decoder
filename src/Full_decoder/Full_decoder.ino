@@ -68,7 +68,8 @@ void reportSlot(uint16_t slot, uint16_t state) {
 }
 
 void setSlot(uint16_t slot, uint16_t state) {
-  confpins[slot]->set(state, 0);
+  if (slot < MAX)
+    confpins[slot]->set(state, 0);
 }
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
@@ -335,15 +336,22 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
 
   if (ArtNr == ARTNR) {
 
-    if (lncvAddress < 255) {
+    if (lncvAddress < 320) {
       DEBUG(cv2address(lncvAddress));
       DEBUG(bytesizeCV(lncvAddress));
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);
       DEBUG(read_cv(&_CV, lncvAddress));
       uint8_t slot = cv2slot(lncvAddress);
-      delete(confpins[slot]);
-      configureSlot(slot);
+      DEBUG("\n");
+      DEBUG("Slot: ");
+      DEBUG(slot);
+      DEBUG(" SlotCV: ");
+      DEBUG(cv2slotcv(lncvAddress, slot));
+      DEBUG("\n");
+      confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+      //delete(confpins[slot]);
+      //configureSlot(slot);
       //lncv[lncvAddress] = lncvValue;
       return LNCV_LACK_OK;
     }
