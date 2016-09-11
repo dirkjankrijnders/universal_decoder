@@ -24,14 +24,12 @@ uint8_t pins_conf = 0;
 // How many boards do you have chained?
 #define NUM_TLC5974 1
 
-#define data   4
-#define clock   5
-#define latch   6
+#define data   10
+#define clock   16
+#define latch   14
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
 
 Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
-int channel, pwm;
-
 
 void enableServos();
 void disableServos();
@@ -142,6 +140,8 @@ void setup() {
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
   }
+  tlc.begin();
+
   programmingMode = false;
 }
 
