@@ -31,6 +31,7 @@ decoder_conf_t EEMEM _CV = {
 
 #define MAX 24
 ConfiguredPin* confpins[MAX];
+uint8_t pins_conf = 0;
 
 #include "Adafruit_TLC5947.h"
 
@@ -151,8 +152,8 @@ void setup() {
   uint8_t i = 0;
   DEBUG("Max # of pins:");
   DEBUGLN(MAX);
-   
-  for (i = 0; i < MAX; i++) {
+  pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
+  for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
   }
   programmingMode = false;
@@ -160,7 +161,7 @@ void setup() {
 
 void loop() {
 	pins_busy = false;
-  for (uint8_t i =0 ; i < MAX ; i++) {
+  for (uint8_t i =0 ; i < pins_conf ; i++) {
 	 confpins[i]->update();
   };
   
