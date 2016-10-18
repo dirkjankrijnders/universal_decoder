@@ -18,9 +18,11 @@ class I10001(cv.CVDelegate):
 		return [1,2,3,4,5,6,7,8];
 	
 	def cvDescription(self, cv):
-		desc = ['', 'Address', 'bla', '', '','',"No configured pins", "Manufacturer", "Version", "Pin configuration slot 1"];
+		desc = ['', 'Address', 'bla', '', '','',"No configured pins", "Manufacturer", "Version"];
 		if cv < len(desc):
 			return desc[cv];
+		if cv in range(9,31):
+			return "Pin configuration slot {}".format(cv-8);
 		
 		if cv > 31:
 			slot, slotcv = cv2slot(cv);
@@ -30,6 +32,8 @@ class I10001(cv.CVDelegate):
 				slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Power slot"];
 			elif self.parent.CVs[9+slot] == 3:
 				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
+			elif self.parent.CVs[9+slot] == 101:
+				slotcvdesc = ["LTC. channel", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
 			else:
 				slotcvdesc = ["Unconfigured", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
 			
@@ -55,4 +59,7 @@ class I10001(cv.CVDelegate):
 					self.parent.readCV(slot*10 + 32 + cv2);
 			if value == 4: # Dual action pin
 				for cv2 in [0, 1, 2, 3, 4, 5, 6]:
+					self.parent.readCV(slot*10 + 32 + cv2);
+			if value == 101: # Output pin
+				for cv2 in [0, 1, 2]:
 					self.parent.readCV(slot*10 + 32 + cv2);
