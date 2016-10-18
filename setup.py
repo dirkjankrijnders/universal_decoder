@@ -26,10 +26,10 @@ setup(name='decconf',
       install_requires=['appdirs', 'yapsy', 'pyserial'],
       entry_points={
             'gui_scripts': [
-                  'decconf=entry_points.decoderconf:main',
+                  'decconf=decconf.entry_points.decoderconf:main',
                   ],
             'console_scripts': [
-                  'bulkLNCVAccess=entry_points.bulkLNCVaccess:main',
+                  'bulkLNCVAccess=decconf.entry_points.bulkLNCVaccess:main',
                   ],
             },
 )
