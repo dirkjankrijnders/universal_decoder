@@ -12,7 +12,7 @@ import sys
 from glob import glob
 from setuptools import Command
 
-from buildqt import BuildQt
+from decconf.buildqt import BuildQt
 
 setup(name='decconf',
       version='1.0',
