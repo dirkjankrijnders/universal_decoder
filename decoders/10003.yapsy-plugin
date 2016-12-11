@@ -1,0 +1,12 @@
+[Core]
+Name = Loconet S88 Bridge
+Module = 10003/10003.py
+
+[Decoder]
+Class = 10003
+
+[Documentation]
+Author = Dirkjan Krijnders
+Version = 0.1
+Description = Loconet S88 Bridge
+Website = http://github.com
