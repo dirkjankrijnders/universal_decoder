@@ -15,6 +15,8 @@ class I10003(cv.CVDelegate):
 	
 	def cvDescription(self, cv):
 		desc = ['', 'Address', '', '', '','Max Modules supported',"No configured modules", "Manufacturer", "Version", "Speed"];
+		if cv < len(desc):
+			return desc[cv];
 		return super(I10003, self).cvDescription(cv);
 	
 	def setCV(self, cv, value):
