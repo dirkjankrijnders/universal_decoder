@@ -318,6 +318,8 @@ int8_t notifyLNCVprogrammingStart(uint16_t & ArtNr, uint16_t & ModuleAddress) {
       return LNCV_LACK_OK;
     }
   }
+  // Apparently another module is being programmed, so stop our programming.
+  programmingMode = false;
   return -1;
 }
 
