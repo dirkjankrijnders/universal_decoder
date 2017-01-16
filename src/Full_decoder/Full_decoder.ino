@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 #include "config.h"
-
+#define VERSION 10200
 /* We're a loconet decoder! */
 #include <LocoNet.h>
 
@@ -246,6 +246,9 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG(lncvValue);
         DEBUG("\n");
 
+        return LNCV_LACK_OK;
+		  } else if (lncvAddress == 1023) {
+        lncvValue = VERSION;
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
         lncvValue = freeRam();
