@@ -130,7 +130,10 @@ void setup() {
   }
 #endif
 
-  DEBUGLN("Universal decoder v0.0");  
+  DEBUG("Universal decoder v");  
+  DEBUGLN(VERSION);
+  DEBUG("Module address: ");
+  DEBUGLN(eeprom_read_byte(&_CV.address));
   LocoNet.init(LOCONET_TX_PIN);
   
   uint8_t i = 0;
