@@ -48,7 +48,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="connectserial">
+         <widget class="QToolButton" name="connectserial">
           <property name="text">
            <string>Connect</string>
           </property>
@@ -68,7 +68,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="infoButton">
+         <widget class="QToolButton" name="infoButton">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -78,9 +78,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="powerControl">
+         <widget class="QToolButton" name="powerControl">
           <property name="text">
-           <string>power</string>
+           <string>Power</string>
           </property>
          </widget>
         </item>
