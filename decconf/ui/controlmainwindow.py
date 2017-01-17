@@ -89,6 +89,10 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self.ui.powerControl.setCheckable(True);
 		self.ui.toolBar.addWidget(self.ui.comboBox);
 		self.ui.toolBar.addWidget(self.ui.connectserial);
+		empty = QtGui.QWidget();
+		empty.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Preferred);
+		self.ui.toolBar.addWidget(empty);
+		self.ui.toolBar.addWidget(self.ui.powerControl);
 		
 		self.moduleDelegates = self.initModuleDelegates();
 		
