@@ -68,6 +68,16 @@
          </spacer>
         </item>
         <item>
+         <widget class="QPushButton" name="infoButton">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Info</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="powerControl">
           <property name="text">
            <string>power</string>

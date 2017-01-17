@@ -92,6 +92,7 @@ class ControlMainWindow(QtGui.QMainWindow):
 		empty = QtGui.QWidget();
 		empty.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Preferred);
 		self.ui.toolBar.addWidget(empty);
+		self.ui.toolBar.addWidget(self.ui.infoButton);
 		self.ui.toolBar.addWidget(self.ui.powerControl);
 		
 		self.moduleDelegates = self.initModuleDelegates();
@@ -108,7 +109,8 @@ class ControlMainWindow(QtGui.QMainWindow):
 			portFound = True
 				
 		self.ui.connectserial.clicked.connect(self.connectserial);
-		self.ui.powerControl.clicked.connect(self.powercontrol)
+		self.ui.powerControl.clicked.connect(self.powercontrol);
+		self.ui.infoButton.clicked.connect(self.infodialog);
 		self.ui.DetectButton.clicked.connect(self.detectModules);
 		
 		self.cvController = cvController(self.ui.cvTable)
@@ -160,6 +162,25 @@ class ControlMainWindow(QtGui.QMainWindow):
 			else:
 				self.lb.write([LN.OPC_GPOFF]);
 	
+	def infodialog(self):
+		if self.lb is not None:
+			dec = self.decodercont.selectedDecoder();
+			print(dec);
+			dec.readCV(1023); # Version
+			dec.readCV(1024); # FreeRAM
+			dec.readCV(1028); # RxPackets
+			dec.readCV(1029); # RxErrors
+			dec.readCV(1030); # TxPackets
+			dec.readCV(1031); # TxErrors
+			dec.readCV(1032); # Collisions
+			
+			from decconf.ui.infodialog import Ui_Dialog
+			infoDialog = QtGui.QDialog(self)
+			infoUi = Ui_Dialog();
+			infoUi.setupUi(infoDialog);
+			infoUi.tableView.setModel(dec);
+			infoDialog.show();
+			
 	def detectModules(self):
 		if self.lb is not None:
 			buf = makeLNCVresponse(0xFFFF,0,0xFFFF, 0, opc = LN.OPC_IMM_PACKET, src = LN.LNCV_SRC_KPU, req = LN.LNCV_REQID_CFGREQUEST);

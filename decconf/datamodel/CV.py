@@ -53,7 +53,7 @@ class CVListModel(QtCore.QAbstractTableModel):
 		self.CVs = list();
 #		self.CVs = dict();
 #		self.show = [0 for cv in range(1,512)];
-		for cv in range(1, 512):
+		for cv in range(1, 1100):
 			self.CVs.append('');
 
 		self.header = ["CV", "Description", "Value"];
