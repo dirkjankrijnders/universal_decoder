@@ -3,7 +3,7 @@
 #include <Servo.h>
 
 #include "config.h"
-#define VERSION 10200
+#define VERSION 10201
 /* We're a loconet decoder! */
 #include <LocoNet.h>
 
@@ -51,6 +51,7 @@ boolean programmingMode;
 
 OneWire ds(A3);
 byte addr[8];
+byte dsdata[9];
 
 #define LOCONET_TX_PIN 5
 
@@ -62,6 +63,30 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 };
 
+uint16_t readTemperature() {
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44,1);         // start conversion, with parasite power on at the end
+
+  delay(1000);     // maybe 750ms is enough, maybe not
+  // we might do a ds.depower() here, but the reset will take care of it.
+
+  byte present = ds.reset();
+  ds.select(addr);    
+  ds.write(0xBE);         // Read Scratchpad
+
+  for (uint8_t i = 0; i < 9; i++) {           // we need 9 bytes
+    dsdata[i] = ds.read();
+  }
+  int16_t raw = (dsdata[1] << 8) | dsdata[0];
+  byte cfg = (dsdata[4] & 0x60);
+  // at lower res, the low bits are undefined, so let's zero them
+  if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
+  else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
+  else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
+  //// default is 12 bit resolution, 750 ms conversion time
+  return raw; // To be devided by 16;
+}
 void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG("Reporting slot ");
   DEBUG(slot);
@@ -271,6 +296,9 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG(lncvValue);
         DEBUG("\n");
 
+        return LNCV_LACK_OK;
+		  } else if (lncvAddress == 1018) {
+        lncvValue = readTemperature();
         return LNCV_LACK_OK;
 		  } else if (lncvAddress == 1019) {
         lncvValue = addr[0];
