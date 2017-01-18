@@ -1,3 +1,5 @@
+#include <OneWire.h>
+
 #include <Servo.h>
 
 #include "config.h"
@@ -46,6 +48,9 @@ lnMsg *LnPacket;
 LocoNetCVClass lnCV;
 
 boolean programmingMode;
+
+OneWire ds(A3);
+byte addr[8];
 
 #define LOCONET_TX_PIN 5
 
@@ -144,8 +149,25 @@ void setup() {
     configureSlot(i);
   }
   tlc.begin();
+  
+  if (!ds.search(addr)) {
+    ds.reset_search();
+    for (uint8_t i = 0; i < 7 ; i++) {
+      addr[i] = 0x00;
+    }
+    DEBUGLN("No ds18s20 found for UID");
+  } 
+#ifdef DEBUG_OUTPUT
+    else {
+    DEBUG("UID: ");
+    for (uint8_t i = 0; i < 7; i++) {
+      Serial.print(i);
+      Serial.print(addr[i], HEX);
+    }
+    DEBUGLN(".");
+  }    
+#endif
 
-  programmingMode = false;
 }
 
 void loop() {
@@ -250,7 +272,27 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG("\n");
 
         return LNCV_LACK_OK;
-		  } else if (lncvAddress == 1023) {
+		  } else if (lncvAddress == 1019) {
+        lncvValue = addr[0];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[1]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1020) {
+        lncvValue = addr[2];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[3]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1021) {
+        lncvValue = addr[4];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[5]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1022) {
+        lncvValue = addr[6];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[7]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1023) {
         lncvValue = VERSION;
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
