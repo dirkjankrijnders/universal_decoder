@@ -15,6 +15,7 @@ class PreferenceDialog(QtGui.QDialog):
 		self.ui.deviceCombo.addItem("{}".format("None"), userdata = None);
 		for ii, port in enumerate(serial.tools.list_ports.comports()):
 			self.ui.deviceCombo.addItem("{}".format(port[0]), userdata = port);
+		self.ui.deviceCombo.addItem("{}".format("Dummy"), userdata = 'dummy');
 		
 		portIndex = self.ui.deviceCombo.findText(self.config.get('general', 'device'))
 		print("Found port index ", portIndex)
