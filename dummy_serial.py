@@ -36,7 +36,7 @@ class dummyDecoder(object):
 		super(dummyDecoder, self).__init__()
 		self.programmingMode = False
 		
-		self.CVs = np.zeros((512,), dtype=int);
+		self.CVs = np.zeros((1100,), dtype=int);
 		self.cvfile = cvfile
 		
 		if os.path.exists(self.cvfile):
