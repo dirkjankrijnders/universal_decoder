@@ -21,10 +21,13 @@ class I10001(cv.CVDelegate):
 		desc = ['', 'Address', 'bla', '', '','',"No configured pins", "Manufacturer", "Version"];
 		if cv < len(desc):
 			return desc[cv];
-		if cv in range(9,31):
+		elif cv in range(9,31):
 			return "Pin configuration slot {}".format(cv-8);
-		
-		if cv > 31:
+		elif cv > 1000:
+			desc_map = {1018: 'Temperature', 1019: 'Serial no.', 1023: 'Firmware version'};
+			if cv in desc_map:
+				return desc_map[cv]
+		elif cv > 31:
 			slot, slotcv = cv2slot(cv);
 			if self.parent.CVs[9+slot] == 1:
 				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
@@ -63,3 +66,15 @@ class I10001(cv.CVDelegate):
 			if value == 101: # Output pin
 				for cv2 in [0, 1, 2]:
 					self.parent.readCV(slot*10 + 32 + cv2);
+		
+	def formatCV(self, cv):
+		if not self.parent.CVs[cv]:
+			return '';
+		if cv == 1018:
+			return str(self.parent.CVs[cv]/16);
+		if cv == 1019:
+			return "{:04x} {:04x} {:04x} {:04x}".format(self.parent.CVs[cv],self.parent.CVs[cv+1],self.parent.CVs[cv+2],self.parent.CVs[cv+3])
+		if cv == 1023:
+			v = str(self.parent.CVs[cv]);
+			return "{}.{}.{}".format(int(v[0:1]), int(v[2:3]), int(v[4:5]))
+		return super(I10001, self).formatCV(cv);

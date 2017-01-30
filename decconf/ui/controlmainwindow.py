@@ -165,7 +165,11 @@ class ControlMainWindow(QtGui.QMainWindow):
 	def infodialog(self):
 		if self.lb is not None:
 			dec = self.decodercont.selectedDecoder();
-			print(dec);
+			dec.readCV(1018); # Temperature
+			dec.readCV(1019); # UID bytes 0-1
+			dec.readCV(1020); # UID bytes 2-3
+			dec.readCV(1021); # UID bytes 4-5
+			dec.readCV(1022); # UID bytes 6-7
 			dec.readCV(1023); # Version
 			dec.readCV(1024); # FreeRAM
 			dec.readCV(1028); # RxPackets
@@ -175,10 +179,12 @@ class ControlMainWindow(QtGui.QMainWindow):
 			dec.readCV(1032); # Collisions
 			
 			from decconf.ui.infodialog import Ui_Dialog
+			from decconf.datamodel.CV import infoListModel
+			
 			infoDialog = QtGui.QDialog(self)
 			infoUi = Ui_Dialog();
 			infoUi.setupUi(infoDialog);
-			infoUi.tableView.setModel(dec);
+			infoUi.tableView.setModel(infoListModel(dec));
 			infoDialog.show();
 			
 	def detectModules(self):

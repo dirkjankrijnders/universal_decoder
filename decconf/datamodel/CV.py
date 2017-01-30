@@ -10,7 +10,41 @@ from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCV
 from decconf.protocols.loconet import LocoNet as LN
 
 #from decoders.dec10001 import dec10001controller
-
+class infoListModel(QtGui.QSortFilterProxyModel):
+	def __init__(self, parent):
+		super(infoListModel, self).__init__(parent);
+		self.parent = parent;
+	
+	def rowCount(self, parent):
+		return 7;
+	
+	def columnCount(self, parent):
+		return 2;
+		
+	def mapToSource(self, proxyIndex):
+		print(proxyIndex);
+		if not proxyIndex.isValid():
+			return QtCore.QModelIndex()
+		return(proxyIndex);
+		
+	def index(self, row,  column, parent = QtCore.QModelIndex()):
+		print(row)
+		print(column)
+		print(parent)
+		return QtCore.QModelIndex(row, column, self)
+		#if row == 1:
+		#	return self.createIndex(1019, 0);
+		if (parent.isValid()):
+		 	sourceParent = mapToSource(parent);
+	# QMapIterator<QPersistentModelIndex, QPersistentModelIndex> it(proxySourceParent);
+	# while (it.hasNext()) {
+	# it.next();
+	# if (it.value()  sourceParent && it.key().row()  row &&
+	# it.key().column() == column)
+	# return it.key();
+	# }
+	# return QModelIndex();
+	# }	
 class CVDelegate(IPlugin):
 	def __init__(self, parent = None):
 		super(CVDelegate, self).__init__();
@@ -32,6 +66,9 @@ class CVDelegate(IPlugin):
 	
 	def setCV(self, cv, value):
 		pass
+	
+	def formatCV(self, cv):
+		return self.parent.CVs[cv];
 		
 class CVListModel(QtCore.QAbstractTableModel):
 	"""	desc = {"10001": [[1, "Address", 1, 1], [6, "No configured pins", 1, 1], [7, "Manufacturer", 1, 0], [8, "Version", 1, 0], [9, "Pin configuration slot 1",1 ,1], [10, "Pin configuration slot 2",1,1], [32, "peri_conf_1[0]",1 ,1 ], [33, "peri_conf_1[1]", 1, 1]],
@@ -89,7 +126,7 @@ class CVListModel(QtCore.QAbstractTableModel):
 			return None
 		desc = self.descriptionDelegate.cvDescription(cv);
 		
-		vals = [cv, desc, self.CVs[cv]]
+		vals = [cv, desc, self.descriptionDelegate.formatCV(cv)]
 		return vals[index.column()]
 		#cvdesc = deepcopy(self.desc[str(self._class)][index.row()])
 		#cvdesc.append(self.CVs[str(cvdesc[0])])

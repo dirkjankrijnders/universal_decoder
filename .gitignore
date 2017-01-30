@@ -10,3 +10,4 @@ Decoder_Configurator.egg-info
 decconf.egg-info
 preferences.py
 .tox
+*.pyc
