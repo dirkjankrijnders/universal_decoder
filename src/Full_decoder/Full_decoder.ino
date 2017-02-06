@@ -1,7 +1,9 @@
+#include <OneWire.h>
+
 #include <Servo.h>
 
 #include "config.h"
-#define VERSION 10200
+#define VERSION 10201
 /* We're a loconet decoder! */
 #include <LocoNet.h>
 
@@ -47,6 +49,10 @@ LocoNetCVClass lnCV;
 
 boolean programmingMode;
 
+OneWire ds(A3);
+byte addr[8];
+byte dsdata[9];
+
 #define LOCONET_TX_PIN 5
 
 extern int __bss_start, __bss_end;
@@ -57,6 +63,30 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 };
 
+uint16_t readTemperature() {
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44,1);         // start conversion, with parasite power on at the end
+
+  delay(1000);     // maybe 750ms is enough, maybe not
+  // we might do a ds.depower() here, but the reset will take care of it.
+
+  byte present = ds.reset();
+  ds.select(addr);    
+  ds.write(0xBE);         // Read Scratchpad
+
+  for (uint8_t i = 0; i < 9; i++) {           // we need 9 bytes
+    dsdata[i] = ds.read();
+  }
+  int16_t raw = (dsdata[1] << 8) | dsdata[0];
+  byte cfg = (dsdata[4] & 0x60);
+  // at lower res, the low bits are undefined, so let's zero them
+  if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
+  else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
+  else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
+  //// default is 12 bit resolution, 750 ms conversion time
+  return raw; // To be devided by 16;
+}
 void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG("Reporting slot ");
   DEBUG(slot);
@@ -144,8 +174,25 @@ void setup() {
     configureSlot(i);
   }
   tlc.begin();
+  
+  if (!ds.search(addr)) {
+    ds.reset_search();
+    for (uint8_t i = 0; i < 7 ; i++) {
+      addr[i] = 0x00;
+    }
+    DEBUGLN("No ds18s20 found for UID");
+  } 
+#ifdef DEBUG_OUTPUT
+    else {
+    DEBUG("UID: ");
+    for (uint8_t i = 0; i < 7; i++) {
+      Serial.print(i);
+      Serial.print(addr[i], HEX);
+    }
+    DEBUGLN(".");
+  }    
+#endif
 
-  programmingMode = false;
 }
 
 void loop() {
@@ -250,7 +297,30 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG("\n");
 
         return LNCV_LACK_OK;
-		  } else if (lncvAddress == 1023) {
+		  } else if (lncvAddress == 1018) {
+        lncvValue = readTemperature();
+        return LNCV_LACK_OK;
+		  } else if (lncvAddress == 1019) {
+        lncvValue = addr[0];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[1]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1020) {
+        lncvValue = addr[2];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[3]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1021) {
+        lncvValue = addr[4];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[5]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1022) {
+        lncvValue = addr[6];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[7]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1023) {
         lncvValue = VERSION;
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
