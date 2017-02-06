@@ -77,10 +77,14 @@ void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG(confpins[slot]->_address);
   DEBUG(" State: ");
   DEBUGLN(state);
+  if (slot == 0)
+    return;
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
 void setSlot(uint16_t slot, uint16_t state) {
+  if (slot == 0)
+    return;
   if (slot < MAX)
     confpins[slot]->set(state, 0);
 }
