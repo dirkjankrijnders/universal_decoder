@@ -167,6 +167,9 @@ void setup() {
     configureSlot(i);
   }
   tlc.begin();
+  
+  pca.begin();
+  pca.setPWMFreq(70);
 
   programmingMode = false;
 }
