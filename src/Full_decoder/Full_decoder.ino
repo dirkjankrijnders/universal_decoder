@@ -1,21 +1,7 @@
 #include <Servo.h>
 
-/*
-If serial output is desired uncommment the #undef line. For production, i.e.
-without computer connected this line should be commented out. 
-*/
-#define DEBUG_OUTPUT
-#undef DEBUG_OUTPUT
-
-#ifdef DEBUG_OUTPUT
-#define USE_SERIAL
-#define DEBUG(x) Serial.print(x)
-#define DEBUGLN(x) Serial.println(x)
-#else
-#define DEBUG(x)
-#define DEBUGLN(x)
-#endif
-
+#include "config.h"
+#define VERSION 10200
 /* We're a loconet decoder! */
 #include <LocoNet.h>
 
@@ -23,6 +9,7 @@ without computer connected this line should be commented out.
 #include "decoder_conf.h"
 #include "configuredpins.h"
 #include "cvaccess.h"
+#include "bus_configuredpins.h"
 
 decoder_conf_t EEMEM _CV = {
 #include "default_conf.h"
@@ -30,9 +17,19 @@ decoder_conf_t EEMEM _CV = {
 
 #define MAX 24
 ConfiguredPin* confpins[MAX];
+uint8_t pins_conf = 0;
 
-/* Power to pins management */
-#define servoEnablePin 15
+#include "Adafruit_TLC5947.h"
+
+// How many boards do you have chained?
+#define NUM_TLC5974 1
+
+#define data   10
+#define clock   16
+#define latch   14
+#define oe  -1  // set to -1 to not use the enable pin (its optional)
+
+Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
 
 void enableServos();
 void disableServos();
@@ -71,7 +68,8 @@ void reportSlot(uint16_t slot, uint16_t state) {
 }
 
 void setSlot(uint16_t slot, uint16_t state) {
-  confpins[slot]->set(state, 0);
+  if (slot < MAX)
+    confpins[slot]->set(state, 0);
 }
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
@@ -79,7 +77,7 @@ void reportSensor(uint16_t address, bool state) {
 
 void configureSlot(uint8_t slot) {
   uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2;
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin;
 
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
@@ -92,7 +90,7 @@ void configureSlot(uint8_t slot) {
         speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
-        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[i].servo.pwrslot)) && 0xFF;
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pwrslot));
         confpins[slot] = new ServoSwitch(slot, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
@@ -100,9 +98,22 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new InputPin(slot, pin, address);
         break;
       case 3: // Output
-        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[i].output.options)) & 0x01) == 0x01);
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
         confpins[slot] = new OutputPin(slot, pin, address, pin_config);
         break;
+      case 4: // Dual action
+        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos2));
+        speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
+        pin_config = eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options));
+
+        confpins[slot] = new DualAction(slot, pin, address, pos1, pos2, speed, pin_config);
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
+        break;
+      case 101: // TLC5947 PWM LED Controller.
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
+        confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, 1000);
+        break;       
       default:
         confpins[slot] = new ConfiguredPin(slot, pin, address);
         break;
@@ -112,8 +123,6 @@ void configureSlot(uint8_t slot) {
     confpins[slot]->print();
 }
 void setup() {
-  pinMode( servoEnablePin, OUTPUT);
-  disableServos();
 #ifdef USE_SERIAL
   Serial.begin(57600);
   while (!Serial){
@@ -121,22 +130,27 @@ void setup() {
   }
 #endif
 
-  DEBUGLN("Universal decoder v0.0");  
+  DEBUG("Universal decoder v");  
+  DEBUGLN(VERSION);
+  DEBUG("Module address: ");
+  DEBUGLN(eeprom_read_byte(&_CV.address));
   LocoNet.init(LOCONET_TX_PIN);
   
   uint8_t i = 0;
   DEBUG("Max # of pins:");
   DEBUGLN(MAX);
-   
-  for (i = 0; i < MAX; i++) {
+  pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
+  for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
   }
+  tlc.begin();
+
   programmingMode = false;
 }
 
 void loop() {
 	pins_busy = false;
-  for (uint8_t i =0 ; i < MAX ; i++) {
+  for (uint8_t i =0 ; i < pins_conf ; i++) {
 	 confpins[i]->update();
   };
   
@@ -173,15 +187,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
       DEBUG("\n");
     }
   }
-  
-}
 
-void enableServos() {
-	digitalWrite(servoEnablePin, HIGH);
-}
-
-void disableServos() {
-	digitalWrite(servoEnablePin, LOW);
 }
 
 void dumpPacket(UhlenbrockMsg & ub) {
@@ -243,6 +249,9 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG(lncvValue);
         DEBUG("\n");
 
+        return LNCV_LACK_OK;
+		  } else if (lncvAddress == 1023) {
+        lncvValue = VERSION;
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
         lncvValue = freeRam();
@@ -315,6 +324,8 @@ int8_t notifyLNCVprogrammingStart(uint16_t & ArtNr, uint16_t & ModuleAddress) {
       return LNCV_LACK_OK;
     }
   }
+  // Apparently another module is being programmed, so stop our programming.
+  programmingMode = false;
   return -1;
 }
 
@@ -339,15 +350,22 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
 
   if (ArtNr == ARTNR) {
 
-    if (lncvAddress < 255) {
+    if (lncvAddress < 320) {
       DEBUG(cv2address(lncvAddress));
       DEBUG(bytesizeCV(lncvAddress));
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);
       DEBUG(read_cv(&_CV, lncvAddress));
       uint8_t slot = cv2slot(lncvAddress);
-      delete(confpins[slot]);
-      configureSlot(slot);
+      DEBUG("\n");
+      DEBUG("Slot: ");
+      DEBUG(slot);
+      DEBUG(" SlotCV: ");
+      DEBUG(cv2slotcv(lncvAddress, slot));
+      DEBUG("\n");
+      confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+      //delete(confpins[slot]);
+      //configureSlot(slot);
       //lncv[lncvAddress] = lncvValue;
       return LNCV_LACK_OK;
     }
