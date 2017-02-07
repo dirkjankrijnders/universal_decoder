@@ -1,9 +1,14 @@
 #include <OneWire.h>
 
-#include <Servo.h>
 
 #include "config.h"
-#define VERSION 10201
+#define VERSION 10300
+
+#if PINSERVO == 1
+#warning "USING SERVO"
+  #include <Servo.h>
+#endif
+
 /* We're a loconet decoder! */
 #include <LocoNet.h>
 
@@ -21,6 +26,7 @@ decoder_conf_t EEMEM _CV = {
 ConfiguredPin* confpins[MAX];
 uint8_t pins_conf = 0;
 
+/* TLC5947 Support*/
 #include "Adafruit_TLC5947.h"
 
 // How many boards do you have chained?
@@ -32,6 +38,14 @@ uint8_t pins_conf = 0;
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
 
 Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
+
+/* PCA9685 Support */
+
+#include <Adafruit_PWMServoDriver.h>
+
+// Default address = 0x40
+Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver();
+
 
 void enableServos();
 void disableServos();
@@ -94,10 +108,14 @@ void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG(confpins[slot]->_address);
   DEBUG(" State: ");
   DEBUGLN(state);
+  if (slot == 0)
+    return;
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
 void setSlot(uint16_t slot, uint16_t state) {
+  if (slot == 0)
+    return;
   if (slot < MAX)
     confpins[slot]->set(state, 0);
 }
@@ -143,7 +161,17 @@ void configureSlot(uint8_t slot) {
       case 101: // TLC5947 PWM LED Controller.
         pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
         confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, 1000);
-        break;       
+        break;
+      case 102: // PCA9686
+        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos2));
+        speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
+        fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
+        fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pwrslot));
+        confpins[slot] = new PCA9685Servo(&pca, slot, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
+        break;
       default:
         confpins[slot] = new ConfiguredPin(slot, pin, address);
         break;
@@ -182,6 +210,7 @@ void setup() {
     }
     DEBUGLN("No ds18s20 found for UID");
   } 
+
 #ifdef DEBUG_OUTPUT
     else {
     DEBUG("UID: ");
@@ -192,6 +221,9 @@ void setup() {
     DEBUGLN(".");
   }    
 #endif
+
+  pca.begin();
+  pca.setPWMFreq(70);
 
 }
 
@@ -434,6 +466,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG(cv2slotcv(lncvAddress, slot));
       DEBUG("\n");
       confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+      confpins[slot]->print();
       //delete(confpins[slot]);
       //configureSlot(slot);
       //lncv[lncvAddress] = lncvValue;
