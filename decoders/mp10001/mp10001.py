@@ -10,6 +10,7 @@ class I10001(cv.CVDelegate):
 	name = "Universal LN Module"
 	description = "Universal LocoNet module"
 	nConfiguredPins = 0;
+	uiController = None;
 	
 	def print_name(self):
 		print("This is plugin 1");
@@ -37,6 +38,8 @@ class I10001(cv.CVDelegate):
 				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
 			elif self.parent.CVs[9+slot] == 101:
 				slotcvdesc = ["LTC. channel", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
+			elif self.parent.CVs[9+slot] == 102:
+				slotcvdesc = ["PCA. channel", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Power slot"];
 			else:
 				slotcvdesc = ["Unconfigured", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
 			
@@ -66,6 +69,14 @@ class I10001(cv.CVDelegate):
 			if value == 101: # Output pin
 				for cv2 in [0, 1, 2]:
 					self.parent.readCV(slot*10 + 32 + cv2);
+			if value == 102: # PCA Servo pin
+				for cv2 in [0, 1, 2, 3, 4,7,8,9]:
+					self.parent.readCV(slot*10 + 32 + cv2);
+		if self.uiController:
+			self.uiController.cvChange(cv, value);
+	
+	def getCV(self, cv):
+		self.parent.getCV(cv);
 		
 	def formatCV(self, cv):
 		if not self.parent.CVs[cv]:
@@ -78,3 +89,8 @@ class I10001(cv.CVDelegate):
 			v = str(self.parent.CVs[cv]);
 			return "{}.{}.{}".format(int(v[0:1]), int(v[2:3]), int(v[4:5]))
 		return super(I10001, self).formatCV(cv);
+	
+	def controller(self, tabwidget):
+		from decoders.mp10001.dec10001 import dec10001controller
+		self.uiController = dec10001controller(self, tabwidget);
+		return self.uiController;

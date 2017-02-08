@@ -1,6 +1,6 @@
 [Core]
 Name = Universal LN Module
-Module = 10001/10001.py
+Module = mp10001/mp10001.py
 
 [Decoder]
 Class = 10001

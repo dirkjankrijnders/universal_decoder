@@ -1,7 +1,7 @@
 from PySide import QtCore, QtGui
 
-from decoders.dec100011 import Ui_Form
-from decoders.dec100012 import Ui_Form as Ui_Form2
+from .dec100011 import Ui_Form
+from .dec100012 import Ui_Form as Ui_Form2
 
 """class PinConfigWidget(QtGui.QWidget):
 	def __init__(self, index, decoder):
@@ -229,11 +229,12 @@ class dec10001controller(object):
 		self.ui.pinsSpinBox.lineEdit().setReadOnly(True);
 		self.ui.pinsSpinBox.setValue(confpins);
 		self.ui.pinsSpinBox.valueChanged.connect(self.confpinsChanged);
-		self.decoder.dataChanged.connect(self.cvChange)
+		self.decoder.parent.dataChanged.connect(self.cvChange)
 	
-	def cvChange(self, topleft, bottomright):
-		cv = self.decoder.row2cv(topleft.row());
-		value = self.decoder.data(topleft);
+	
+	def cvChange(self, cv, value):
+		#cv = #self.decoder.row2cv(topleft.row());
+		#value = self.decoder.data(topleft);
 		if value is None:
 			return
 		if cv == 1:
@@ -243,7 +244,7 @@ class dec10001controller(object):
 	
 	def addressChanged(self, value):
 		"""docstring for addressChanged"""
-		self.decoder.writeCV(1, value);
+		self.decoder.parent.writeCV(1, value);
 		
 	def generalCVs(self):
 		return range(1,31);
