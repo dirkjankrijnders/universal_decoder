@@ -202,7 +202,7 @@ class CVListModel(QtCore.QAbstractTableModel):
 		return self.descriptionDelegate.hasGui();
 	
 	def controller(self, tabwidget):
-		return self.descriptionDelegate.controller();
+		return self.descriptionDelegate.controller(tabwidget);
 		
 		
 class cvController(object):

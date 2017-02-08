@@ -22,6 +22,7 @@ class cvController(object):
 		self.decoder = dec;
 		self.decoder.open()
 		self.tableView.setModel(self.decoder);
+		self.decoder.hasGui();
 		self.decui = dec.controller(widget)
 		
 	def readCV(self, cv, value):
