@@ -24,6 +24,7 @@ class dummySerial(object):
 		return self.stream.get();
 	
 	def write(self, buf):
+		self.stream.put(bytes(buf));
 		for c in self.clients:
 			resp = c.checkMsg(buf);
 			if resp is not None:
