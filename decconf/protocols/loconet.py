@@ -181,6 +181,20 @@ def parseLNCVmsg(buf):
 	else:
 		return None
 
+def formatLNmsg(data):
+	lncv = parseLNCVmsg(data);
+	info = "info";
+	if lncv is not None:
+		del lncv['len'];
+		del lncv['PXCT1'];
+		del lncv['checksum'];
+		info = ", ".join(["{}: {}".format(k,v) for k,v in lncv.items()]);
+	elif data[0] == LocoNet.OPC_GPOFF:
+		info = "Power off"
+	elif data[0] == LocoNet.OPC_GPON:
+		info = "Power on"
+	return " ".join("{:02x}".format(b) for b in data).upper(), info;
+	
 class LNMessage(object):
 	"""docstring for LNMessage"""
 	def __init__(self, buf, expectReply = False):

@@ -22,7 +22,7 @@ from decconf.datamodel.CV import CVDelegate
 from dummy_serial import dummySerial
 
 from decconf.protocols.loconet import LocoNet as LN
-from decconf.protocols.loconet import makeLNCVresponse, parseLNCVmsg
+from decconf.protocols.loconet import makeLNCVresponse, parseLNCVmsg, formatLNmsg, checksumLnBuf
 
 from decconf.interfaces.locobuffer import LocoBuffer
 
@@ -237,7 +237,8 @@ class ControlMainWindow(QtGui.QMainWindow):
 			
 	def recvPkt(self,data):
 		self.parseLNPkt(data);
-		self.ui.ReceivedPacketsList.addItem(" ".join("{:02x}".format(b) for b in data).upper());
+		_bytes, info = formatLNmsg(data);
+		self.ui.ReceivedPacketsList.addItem(_bytes + "\t" + info);
 		print(data)
 	
 	def _about(self):
