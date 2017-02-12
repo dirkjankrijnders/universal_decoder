@@ -12,6 +12,9 @@ class I10001(cv.CVDelegate):
 	nConfiguredPins = 0;
 	uiController = None;
 	
+	def close(arg):
+		pass
+		
 	def print_name(self):
 		print("This is plugin 1");
 	
