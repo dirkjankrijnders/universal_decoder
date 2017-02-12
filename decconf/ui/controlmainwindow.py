@@ -158,9 +158,9 @@ class ControlMainWindow(QtGui.QMainWindow):
 	def powercontrol(self):
 		if self.lb is not None:
 			if self.ui.powerControl.isChecked():
-				self.lb.write([LN.OPC_GPON]);
+				self.lb.write(checksumLnBuf([LN.OPC_GPON, 0x00]));
 			else:
-				self.lb.write([LN.OPC_GPOFF]);
+				self.lb.write(checksumLnBuf([LN.OPC_GPOFF, 0x00]));
 	
 	def infodialog(self):
 		if self.lb is not None:
