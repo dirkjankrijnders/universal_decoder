@@ -19,6 +19,9 @@ class dummySerial(object):
 		
 	def open(self):
 		pass
+	
+	def close(self):
+		pass
 		
 	def read(self, n):
 		return self.stream.get();
