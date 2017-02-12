@@ -68,6 +68,7 @@ class LocoBuffer(object):
 			msg = self.mq.get();
 			self.logger.debug("Sending to serial: 0x {}".format( " ".join("{:02x}".format(b) for b in msg.msg)))
 			self.serial.write(msg.msg);
+			self.lastsend = msg.msg;
 			if msg.expectReply:
 				self.expectCondition.acquire();
 				self.expectMessage = msg;
