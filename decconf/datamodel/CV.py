@@ -106,7 +106,7 @@ class CVListModel(QtCore.QAbstractTableModel):
 			return None
 		
 		self.cs.write(stopModuleLNCVProgramming(self._class, self._address));
-
+		self.descriptionDelegate.close();
 	def programmingAck(self, pkt):
 		self.readAllCV();
 			
@@ -204,6 +204,8 @@ class CVListModel(QtCore.QAbstractTableModel):
 	def controller(self, tabwidget):
 		return self.descriptionDelegate.controller(tabwidget);
 		
+	def row2cv(self, row):
+		return row
 		
 class cvController(object):
 	"""docstring for cvController"""
