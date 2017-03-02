@@ -2,14 +2,14 @@
 
 import sys
 
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui, QtWidgets
 
 
 from decconf.ui.controlmainwindow import ControlMainWindow
 
 def main():
 	"""docstring for main"""
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	app.setApplicationName("Decoder Configurator")
 	mySW = ControlMainWindow()
 	mySW.show()
