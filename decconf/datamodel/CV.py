@@ -1,7 +1,7 @@
 from copy import deepcopy
 from time import sleep
 
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui
 import numpy as np
 
 from yapsy.IPlugin import IPlugin
@@ -10,7 +10,7 @@ from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCV
 from decconf.protocols.loconet import LocoNet as LN
 
 #from decoders.dec10001 import dec10001controller
-class infoListModel(QtGui.QSortFilterProxyModel):
+class infoListModel(QtCore.QSortFilterProxyModel):
 	def __init__(self, parent):
 		super(infoListModel, self).__init__(parent);
 		self.parent = parent;

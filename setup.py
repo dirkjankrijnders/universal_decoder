@@ -23,7 +23,7 @@ setup(name='decconf',
       #packages=['decconf', 'decconf.ui', 'decconf.protocols', 'decconf.interfaces', 'decconf.datamodel', 'decoders', 'entry_points'],
       packages = find_packages(),
       cmdclass={'build_qt': BuildQt},
-      install_requires=['appdirs', 'yapsy', 'pyserial'],
+      install_requires=['appdirs', 'yapsy', 'pyserial', 'Qt.py'],
       entry_points={
             'gui_scripts': [
                   'decconf=decconf.entry_points.decoderconf:main',
