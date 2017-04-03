@@ -241,7 +241,9 @@ class ControlMainWindow(QtWidgets.QMainWindow):
 		print(data)
 	
 	def _about(self):
-		print("About triggered")
+		aboutMsgBox = QtGui.QMessageBox()
+		aboutMsgBox.setText("Decoder configurator Loconet CV based decoders");
+		aboutMsgBox.exec();
 		
 	def _pref(self):
 		if self._prefdialog is None:
