@@ -26,5 +26,5 @@ setup(name='decconf',
               'bulkLNCVAccess=decconf.entry_points.bulkLNCVaccess:main',
           ],
           },
+     test_suite='nose.collector'
      )
-

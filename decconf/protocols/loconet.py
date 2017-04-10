@@ -5,7 +5,7 @@ import struct
 
 LN_CHECKSUM_SEED = 0xFF
 LNCV_fmt = '<BBBBBBBHHHBB'
-LNCV_names = ['OPC', 'len', 'SRC', 'DSTL', 'DSTH', 'ReqId', 'PXCT1', 
+LNCV_names = ['OPC', 'len', 'SRC', 'DSTL', 'DSTH', 'ReqId', 'PXCT1',
               'deviceClass', 'lncvNumber', 'lncvValue', 'flags', 'checksum']
 
 """ Loconet class definition """
@@ -79,7 +79,7 @@ class LocoNet(object):
     LNCV_LACK_ERROR_OUTOFRANGE = 3
 # Everything OK
     LNCV_LACK_OK = 127
- 
+
     logger = logging.getLogger('decconf.loconet')
 
 # the valid range for module addresses (CV0) as per the LNCV spec.
@@ -87,91 +87,94 @@ class LocoNet(object):
 #    LNCV_MAX_MODULEADDR (65534)
 
 def recvLnMsg(buf):
-    bGotNewLength = 0
+    gotnewlength = 0
 
-    for newByte in buf:
+    for newbyte in buf:
         # Check if this is the beginning of a new packet
-        if(newByte & 0x80):
+        if newbyte & 0x80:
             # if the ReadPacket index is not the same as the Read index then we
-            # have recieved the start of the next packet without completing the 
+            # have recieved the start of the next packet without completing the
             # previous one which is an error
             """if( Buffer->ReadPacketIndex != Buffer->ReadIndex )
-                Buffer->Stats.RxErrors++ ;
+                Buffer->Stats.RxErrors++
             """
             accumulator = bytearray()
-            CheckSum = LN_CHECKSUM_SEED
-            bGotNewLength = 0 ;
+            checksum = LN_CHECKSUM_SEED
+            gotnewlength = 0
             # Set the return packet pointer to NULL first
-            tempMsg = None ;
-            ReadExpLen = 0;
-            if ( ( newByte & 0x60 ) == 0x60 ):
-                ReadExpLen = 0;
+            tempMsg = None
+            readexplen = 0
+            if (newbyte & 0x60) == 0x60:
+                readexplen = 0
             else:
-                ReadExpLen = ( ( newByte & 0x60 ) >> 4 ) + 2 ;
-            
-        elif bGotNewLength == 0:
-            if (ReadExpLen != 0):    # fixed length opcode found?
-                bGotNewLength = 1 ;
-                # If the Expected Length is 0 and the newByte is not an Command OPC code, then it must be
-                # the length byte for a variable length packet
-            elif(ReadExpLen == 0 ):
-                ReadExpLen = newByte ;
-                bGotNewLength = 1 ;
-            else: 
-                bGotNewLength = 0 ;
-            
+                readexplen = ((newbyte & 0x60) >> 4) + 2
+
+        elif gotnewlength == 0:
+            if readexplen != 0:  # fixed length opcode found?
+                gotnewlength = 1
+                # If the Expected Length is 0 and the newbyte is not an Command
+                # OPC code, then it must be the length byte for a variable
+                # length packet
+            elif readexplen == 0:
+                readexplen = newbyte
+                gotnewlength = 1
+            else:
+                gotnewlength = 0
+
         # Do we have a complete packet
-        accumulator = accumulator + bytes([newByte]);
-        if len(accumulator) == ReadExpLen:
+        accumulator = accumulator + bytes([newbyte])
+        if len(accumulator) == readexplen:
             # Check if we have a good checksum
-            if( CheckSum == newByte ) :
+            if checksum == newbyte:
                 # Set the return packet pointer
-                tempMsg = accumulator;
-                #Buffer->Stats.RxPackets++ ;
+                tempMsg = accumulator
+                #Buffer->Stats.RxPackets++
                 #else
-                #Buffer->Stats.RxErrors++ ;
+                #Buffer->Stats.RxErrors++
 
             else:
-                LocoNet.logger.warn("Invalid packet recieved: {}".format(accumulator) )
-            if( tempMsg != None ):
-                LocoNet.logger.debug("Packet recieved: 0x {}".format( " ".join("{:02x}".format(b) for b in tempMsg)));
-                return bytearray(tempMsg);
+                LocoNet.logger.warn("Invalid packet recieved: {}"
+                        .format(accumulator))
+            if tempMsg != None:
+                LocoNet.logger.debug("Packet recieved: 0x {}".
+                        format( " ".join("{:02x}".format(b) for b in tempMsg)))
+                return bytearray(tempMsg)
 
         # Packet not complete so add the current byte to the checksum
-        CheckSum ^= newByte ;
+        checksum ^= newbyte
 
-    return None ;
+    return None
     
 def checksumLnBuf(buf):
     """Replaces the last byte of buf with the checksum over the over bytes"""
-    CheckSum = LN_CHECKSUM_SEED ;
-    for newByte in buf[:-1]:
-        CheckSum ^= newByte ;
-    buf[-1] = CheckSum
-    return buf; #bytearray(buf + bytes([CheckSum]));
+    checksum = LN_CHECKSUM_SEED
+    for newbyte in buf[:-1]:
+        checksum ^= newbyte
+    buf[-1] = checksum
+    return buf; #bytearray(buf + bytes([checksum]))
 
 def computeBytesFromPXCT(buf):
-    mask = 0x01;
+    mask = 0x01
     # Data has only 7 bytes, so we consider only 7 bits from PXCT1
     for i in range(7):
         if ((buf[6] & mask) != 0x00):
             # Bit was set
-            buf[7+i] |= 0x80;
-        mask <<= 1;
+            buf[7+i] |= 0x80
+        mask <<= 1
 
-    buf[6] = 0x00;
-    return buf;
+    buf[6] = 0x00
+    return buf
 
 
 def computePXCTFromBytes(buf):
-    mask = 0x01;
-    buf[6] = 0x00;
+    mask = 0x01
+    buf[6] = 0x00
     # Data has only 7 bytes, so we consider only 7 bits from PXCT1
     for i in range(7):
         if ((buf[7+i] & 0x80) != 0x00):
             buf[6] |= mask; #add bit to PXCT1
             buf[7+i] &= 0x7F;    # remove bit from data byte
-        mask <<= 1;
+        mask <<= 1
     return buf
     
 def parseLNCVmsg(buf):
@@ -180,62 +183,62 @@ def parseLNCVmsg(buf):
 
         #    try:
     if (buf[0] == LocoNet.OPC_IMM_PACKET) or (buf[0] == LocoNet.OPC_PEER_XFER):
-        buf = computeBytesFromPXCT(buf);
-        pkt = struct.unpack(LNCV_fmt, buf);
-        return dict(list(zip(LNCV_names, pkt)));
+        buf = computeBytesFromPXCT(buf)
+        pkt = struct.unpack(LNCV_fmt, buf)
+        return dict(list(zip(LNCV_names, pkt)))
     else:
         return None
 
 class LNMessage(object):
     """docstring for LNMessage"""
     def __init__(self, buf, expectReply = False):
-        super(LNMessage, self).__init__();
+        super(LNMessage, self).__init__()
         self.msg = buf
         self.expectReply = expectReply
         
 def startModuleLNCVProgramming(deviceClass, address):
-    return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PRON, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST);
+    return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PRON, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST)
 
 def stopModuleLNCVProgramming(deviceClass, address):
-    return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PROFF, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST);
+    return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PROFF, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST)
     
 def readModuleLNCV(deviceClass, address, cv):
-    return makeLNCVresponse(deviceClass, cv, 0, 0, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST);
+    return makeLNCVresponse(deviceClass, cv, 0, 0, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGREQUEST)
 
 def writeModuleLNCV(deviceClass, address, cv, value):
-    return makeLNCVresponse(deviceClass, cv, value, 0, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGWRITE);
+    return makeLNCVresponse(deviceClass, cv, value, 0, opc = LocoNet.OPC_IMM_PACKET, req = LocoNet.LNCV_REQID_CFGWRITE)
     
 def makeLNCVresponse(first, second, third, last, opc = LocoNet.OPC_PEER_XFER, src = LocoNet.LNCV_SRC_KPU, req = LocoNet.LNCV_REQID_CFGREAD):
-    pkt = list(range(12));
+    pkt = list(range(12))
     pkt[0] = opc
     pkt[1] = 15
-    pkt[2] = src;
-    pkt[3] = LocoNet.LNCV_MODULE_DSTL;
-    pkt[4] = LocoNet.LNCV_MODULE_DSTH;
-    pkt[5] = req;
+    pkt[2] = src
+    pkt[3] = LocoNet.LNCV_MODULE_DSTL
+    pkt[4] = LocoNet.LNCV_MODULE_DSTH
+    pkt[5] = req
     
-    pkt[7] = first;
-    pkt[8] = second;
-    pkt[9] = third;
-    pkt[10]= last;
+    pkt[7] = first
+    pkt[8] = second
+    pkt[9] = third
+    pkt[10]= last
     
     buf = bytearray(struct.pack(LNCV_fmt, *pkt))
     buf = computePXCTFromBytes(buf)
-    buf = checksumLnBuf(buf);
+    buf = checksumLnBuf(buf)
     return buf
     
 class LNCVConfirmedMessage(LNMessage):
     def __init__(self, msg, reply, mask, src, retry = 1):
-        super(LNCVConfirmedMessage, self).__init__(msg, True);
+        super(LNCVConfirmedMessage, self).__init__(msg, True)
         
         self.reply = reply
         self.mask = mask
         self.src = src
-        self.retry = retry;
+        self.retry = retry
         
         self.logger = logging.getLogger('decconf.Loconet.LNCVConfirmedMessage')
         
-        self.send = False;
+        self.send = False
 
     def match(self, reply):
         if len(reply) != len(self.mask):
@@ -244,7 +247,7 @@ class LNCVConfirmedMessage(LNMessage):
         self.logger.debug("reply: {}, exp. reply: {}, mask: {}". format(" ".join("{:02x}".format(b) for b in reply), " ".join("{:02x}".format(b) for b in self.reply)," ".join("{:02x}".format(b) for b in self.mask)))
         self.logger.debug('Comparing: {} == {}'.format(int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big'), (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big'))))
         if ((int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big')) == (int.from_bytes(self.reply,'big') & int.from_bytes(self.mask, 'big'))):
-            self.src.messageConfirmed(self, reply);
+            self.src.messageConfirmed(self, reply)
             return True
         
         return False
@@ -253,23 +256,23 @@ class LNCVReadMessage(LNCVConfirmedMessage):
     """docstring for LNCVReadMessage"""
     def __init__(self, msg, src):
         mask  = bytearray(b'\0' * 15)
-        reply = bytearray(msg);
-        reply[0] = 0xe5;
-        mask[0] = 0xff;
-        mask[1] = 0xff;
-        mask[7] = 0xff;
-        mask[8] = 0xff;
-        mask[9] = 0xff;
-        mask[10] = 0xff;
+        reply = bytearray(msg)
+        reply[0] = 0xe5
+        mask[0] = 0xff
+        mask[1] = 0xff
+        mask[7] = 0xff
+        mask[8] = 0xff
+        mask[9] = 0xff
+        mask[10] = 0xff
 
-        super(LNCVReadMessage, self).__init__(msg, reply, mask, src);
+        super(LNCVReadMessage, self).__init__(msg, reply, mask, src)
     
 class LNCVWriteMessage(LNCVConfirmedMessage):
     """docstring for LNCVReadMessage"""
     def __init__(self, msg, src):
-        #mask = bytearray(b'\0' * 4);
-        mask = bytes.fromhex('ffff0000');
-        reply  = bytearray.fromhex('b46d7fff');
+        #mask = bytearray(b'\0' * 4)
+        mask = bytes.fromhex('ffff0000')
+        reply  = bytearray.fromhex('b46d7fff')
         reply[1] = msg[0] & 0x7f
-        super(LNCVWriteMessage, self).__init__(msg, reply, mask, src);
+        super(LNCVWriteMessage, self).__init__(msg, reply, mask, src)
         

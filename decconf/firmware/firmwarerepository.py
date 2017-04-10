@@ -73,7 +73,11 @@ class FirmwarePackage(object):
     def __str__(self):
         """ Pretty print package information """
         format_string = "Firmware package {}, version {}, available for boards {}"
-        return format_string.format(self.filename, self.version, ", ".join(self.boards))
+        return format_string.format(self.name, self.version, ", ".join(self.boards))
+
+    def __repr__(self):
+        format_string = "FirmwarePackage('{}', '{}')"
+        return format_string.format(self.fwpkgdir, self.fwrepodir)
 
     def _parsepkg(self):
         """ Parse the metadata file supplied in the packages """
