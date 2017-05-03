@@ -2,6 +2,7 @@ import configparser
 import copy
 import logging
 import os
+import time
 import queue
 
 from copy import deepcopy
@@ -242,7 +243,19 @@ class ControlMainWindow(QtGui.QMainWindow):
 		print(data)
 	
 	def _about(self):
-		print("About triggered")
+		print("About triggered");
+		
+	def _quit(self):
+		try:
+			self.decodercont.selectedDecoder().close();
+		except:
+			pass
+		
+		time.sleep(2);
+		self.lb = None;
+		self.connected = False
+		self.serial.close();
+		exit(0);
 		
 	def _pref(self):
 		if self._prefdialog is None:
@@ -262,8 +275,10 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self._helpMenu = self._menuBar.addMenu("Help")
 		self._prefAction = QtGui.QAction("Preferences", self, statusTip="Preferences", triggered=self._pref)
 		self._aboutAction = QtGui.QAction("About", self, statusTip="About", triggered=self._about)
+		self._quitAction = QtGui.QAction("Quit", self, statusTip="Quit", triggered=self._quit)
 		self._helpMenu.addAction(self._aboutAction)
 		self._helpMenu.addAction(self._prefAction)
+		self._helpMenu.addAction(self._quitAction)
 		self._menuBar.show()
 		#print("Added menu")
 	
