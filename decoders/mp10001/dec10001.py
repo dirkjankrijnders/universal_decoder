@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui, QtWidgets
 
 from .dec100011 import Ui_Form
 from .dec100012 import Ui_Form as Ui_Form2
@@ -63,7 +63,7 @@ from .dec100012 import Ui_Form as Ui_Form2
 		self.stackedlayout.addWidget(self.setupNoneLayout());
 		self.stackedlayout.addWidget(self.setupServoLayout());
 """		
-class PinConfigWidget(QtGui.QWidget):
+class PinConfigWidget(QtWidgets.QWidget):
 	cvsPerPin = 7;
 	
 	def __init__(self, index, decoder):
@@ -204,7 +204,7 @@ class dec10001controller(object):
 		self.decoder = decoder
 		self.tabwidget = tabwidget
 		
-		self.generalwidget = QtGui.QWidget();
+		self.generalwidget = QtWidgets.QWidget();
 		self.ui = Ui_Form()
 		self.ui.setupUi(self.generalwidget);
 		

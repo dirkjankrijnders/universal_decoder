@@ -1,2 +1,6 @@
 nose
+nosexcover
+coverage
+httpretty
+coveralls
 

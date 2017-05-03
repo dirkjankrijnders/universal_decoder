@@ -1,7 +1,7 @@
 from copy import deepcopy
 from time import sleep
 
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui, QtWidgets
 import numpy as np
 
 from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
@@ -48,14 +48,14 @@ class DecoderController(object):
 		self.widget.setHeaderLabels(['Art Nr', 'Description']);
 		
 		for cl in DecoderController.desc.keys():
-			self._classes[str(cl)] = (QtGui.QTreeWidgetItem(self.widget, [str(cl), DecoderController.desc[str(cl)]]), []);
+			self._classes[str(cl)] = (QtWidgets.QTreeWidgetItem(self.widget, [str(cl), DecoderController.desc[str(cl)]]), []);
 			
 		self.widget.itemSelectionChanged.connect(self.select);
 		
 	def addDecoder(self, dec):
 		#dec.parent = self.cvController
 		self._classes[str(dec._class)][1].append(dec._address);
-		treeitem = QtGui.QTreeWidgetItem(self._classes[str(dec._class)][0], [str(dec._address), "bla"])
+		treeitem = QtWidgets.QTreeWidgetItem(self._classes[str(dec._class)][0], [str(dec._address), "bla"])
 		print(self._classes[str(dec._class)][0])
 		self.decoders[treeitem] = dec;
 	

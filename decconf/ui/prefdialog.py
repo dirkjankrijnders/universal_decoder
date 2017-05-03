@@ -1,9 +1,10 @@
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui
+from Qt import QtWidgets
 import serial.tools.list_ports
 
 from decconf.ui.preferences import Ui_Dialog 
 
-class PreferenceDialog(QtGui.QDialog):
+class PreferenceDialog(QtWidgets.QDialog):
 	"""docstring for PreferenceDialog"""
 	def __init__(self, config):
 		super(PreferenceDialog, self).__init__()

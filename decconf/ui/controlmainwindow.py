@@ -7,7 +7,7 @@ import queue
 
 from copy import deepcopy
 
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui, QtWidgets
 import serial.tools.list_ports
 from appdirs import *
 
@@ -40,7 +40,7 @@ class RecieveThread(QtCore.QThread):
       		# this will add a ref to self.data and avoid the destruction 
 			self.dataReady.emit(deepcopy(self.data)) 
 	  
-class ControlMainWindow(QtGui.QMainWindow):
+class ControlMainWindow(QtWidgets.QMainWindow):
 	def __init__(self, parent=None):
 		super(ControlMainWindow, self).__init__(parent)
 
@@ -90,8 +90,8 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self.ui.powerControl.setCheckable(True);
 		self.ui.toolBar.addWidget(self.ui.comboBox);
 		self.ui.toolBar.addWidget(self.ui.connectserial);
-		empty = QtGui.QWidget();
-		empty.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Preferred);
+		empty = QtWidgets.QWidget();
+		empty.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Preferred);
 		self.ui.toolBar.addWidget(empty);
 		self.ui.toolBar.addWidget(self.ui.infoButton);
 		self.ui.toolBar.addWidget(self.ui.powerControl);
@@ -243,7 +243,9 @@ class ControlMainWindow(QtGui.QMainWindow):
 		print(data)
 	
 	def _about(self):
-		print("About triggered");
+		aboutMsgBox = QtGui.QMessageBox()
+		aboutMsgBox.setText("Decoder configurator Loconet CV based decoders");
+		aboutMsgBox.exec()
 		
 	def _quit(self):
 		try:
@@ -273,9 +275,9 @@ class ControlMainWindow(QtGui.QMainWindow):
 		self._menuBar.setNativeMenuBar(True)
 		self.setMenuBar(self._menuBar)
 		self._helpMenu = self._menuBar.addMenu("Help")
-		self._prefAction = QtGui.QAction("Preferences", self, statusTip="Preferences", triggered=self._pref)
-		self._aboutAction = QtGui.QAction("About", self, statusTip="About", triggered=self._about)
-		self._quitAction = QtGui.QAction("Quit", self, statusTip="Quit", triggered=self._quit)
+		self._prefAction = QtWidgets.QAction("Preferences", self, statusTip="Preferences", triggered=self._pref)
+		self._aboutAction = QtWidgets.QAction("About", self, statusTip="About", triggered=self._about)
+		self._quitAction = QtWidgets.QAction("Quit", self, statusTip="Quit", triggered=self._quit)
 		self._helpMenu.addAction(self._aboutAction)
 		self._helpMenu.addAction(self._prefAction)
 		self._helpMenu.addAction(self._quitAction)
