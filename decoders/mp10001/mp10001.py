@@ -34,7 +34,7 @@ class I10001(cv.CVDelegate):
 		elif cv > 31:
 			slot, slotcv = cv2slot(cv);
 			if self.parent.CVs[9+slot] == 1:
-				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
+				slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Secondary address", "Res. 2", "Res. 3", "Res. 4", "Res. 5", "Res. 6", "Res. 7"];
 			elif self.parent.CVs[9+slot] == 2:
 				slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1", "FB slot 2", "Power slot"];
 			elif self.parent.CVs[9+slot] == 3:
@@ -58,7 +58,7 @@ class I10001(cv.CVDelegate):
 			slot = cv -  9
 			print("Slot: ", str(slot))
 			if value == 1: # Input pin
-				for cv2 in [0, 1]:
+				for cv2 in [0, 1, 2, 3]:
 					self.parent.readCV(slot*10 + 32 + cv2);
 			if value == 2: # Servo pin
 				for cv2 in [0, 1, 2, 3, 4,7,8,9]:
