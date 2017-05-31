@@ -91,11 +91,11 @@ class PinConfigWidget(QtWidgets.QWidget):
 		self.ui.pos2SpinBox.valueChanged.connect(self.pos2Changed);
 		self.ui.speedSpinBox.valueChanged.connect(self.speedChanged);
 		
-		self.decoder.dataChanged.connect(self.cvDataChanged);
+		self.decoder.parent.dataChanged.connect(self.cvDataChanged);
 		
 	def cvDataChanged(self, topleft, bottomright):
-		cv = self.decoder.row2cv(topleft.row());
-		value = self.decoder.data(topleft);
+		cv = self.decoder.parent.row2cv(topleft.row());
+		value = self.decoder.parent.data(topleft);
 		
 		if cv > 31:
 			pinconf = int((cv -32)/self.cvsPerPin);
@@ -251,7 +251,7 @@ class dec10001controller(object):
 		
 	def confpinsChanged(self, value):
 		"""docstring for confpinsChanged"""
-		self.decoder.writeCV(6, value);
+		self.decoder.parent.writeCV(6, value);
 		if len(self.tabs) < value +1:
 			self.tabs.append(self.tabwidget.addTab(PinConfigWidget(value, self.decoder), "Slot {}".format(value)));
 		
