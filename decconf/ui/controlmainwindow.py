@@ -7,13 +7,13 @@ import queue
 
 from copy import deepcopy
 
-from Qt import QtCore, QtGui, QtWidgets
+from Qt import QtCore, QtGui, QtWidgets, QtCompat
 import serial.tools.list_ports
 from appdirs import *
 
 from yapsy.PluginManager import PluginManager
 
-from decconf.ui.mainwindow import Ui_MainWindow
+#from decconf.ui.mainwindow import Ui_MainWindow
 from decconf.ui.prefdialog import PreferenceDialog
 #from decconf.datamodel.treemodel import TreeModel, TreeItem
 from decconf.datamodel.decoder import DecoderController, cvController
@@ -40,9 +40,10 @@ class RecieveThread(QtCore.QThread):
       		# this will add a ref to self.data and avoid the destruction 
 			self.dataReady.emit(deepcopy(self.data)) 
 	  
-class ControlMainWindow(QtWidgets.QMainWindow):
+class ControlMainWindow(object): #QtWidgets.QMainWindow):
 	def __init__(self, parent=None):
-		super(ControlMainWindow, self).__init__(parent)
+		#super(ControlMainWindow, self).__init__(parent)
+		super(ControlMainWindow, self).__init__()
 
 		self.configfile = os.path.join(user_config_dir("Decconf", "Pythsoft"), 'decconf.ini')
 		if not os.path.isdir(user_config_dir("Decconf", "Pythsoft")):
@@ -83,8 +84,9 @@ class ControlMainWindow(QtWidgets.QMainWindow):
 		self.recvThread.dataReady.connect(self.recvPkt, QtCore.Qt.QueuedConnection);
 		self.recvThread.start()
 		self._prefdialog = None
-		self.ui = Ui_MainWindow()
-		self.ui.setupUi(self)
+		self.ui = QtCompat.loadUi("decconf/ui/mainwindow.ui") #Ui_MainWindow()
+		#self.ui.setupUi(self)
+		self.ui.show()
 		self.SetupMenu();
 		self.ui.connectserial.setText("Connect")
 		self.ui.powerControl.setCheckable(True);
@@ -100,9 +102,9 @@ class ControlMainWindow(QtWidgets.QMainWindow):
 		
 		portFound = False
 		for ii, port in enumerate(serial.tools.list_ports.comports()):
-			self.ui.comboBox.addItem("{}".format(port[0]), userdata = port);
+			self.ui.comboBox.addItem("{}".format(port[0]), userData = port);
 		
-		self.ui.comboBox.addItem("Dummy", userdata = 'dummy');
+		self.ui.comboBox.addItem("Dummy", userData = 'dummy');
 		
 		portIndex = self.ui.comboBox.findText(self.config.get('general', 'device'))
 		if portIndex >=0:
@@ -243,7 +245,7 @@ class ControlMainWindow(QtWidgets.QMainWindow):
 		print(data)
 	
 	def _about(self):
-		aboutMsgBox = QtGui.QMessageBox()
+		aboutMsgBox = QtWidgets.QMessageBox()
 		aboutMsgBox.setText("Decoder configurator Loconet CV based decoders");
 		aboutMsgBox.exec()
 		
@@ -262,7 +264,7 @@ class ControlMainWindow(QtWidgets.QMainWindow):
 	def _pref(self):
 		if self._prefdialog is None:
 			self._prefdialog = PreferenceDialog(self.config);
-		if self._prefdialog.exec():
+		if self._prefdialog.ui.exec():
 			with open(self.configfile, 'w') as fid:
 				self.config.write(fid)
 		else:
@@ -270,19 +272,19 @@ class ControlMainWindow(QtWidgets.QMainWindow):
 			self.config.read(self.configfile);
 		
 	def SetupMenu(self):
-		self._menuBar = self.menuBar()
+		self._menuBar = self.ui.menuBar()
 		#self._menuBar = QtGui.QMenuBar()
-		self._menuBar.setNativeMenuBar(True)
-		self.setMenuBar(self._menuBar)
+		#self._menuBar.setNativeMenuBar(True)
+		#self.setMenuBar(self._menuBar)
 		self._helpMenu = self._menuBar.addMenu("Help")
-		self._prefAction = QtWidgets.QAction("Preferences", self, statusTip="Preferences", triggered=self._pref)
-		self._aboutAction = QtWidgets.QAction("About", self, statusTip="About", triggered=self._about)
-		self._quitAction = QtWidgets.QAction("Quit", self, statusTip="Quit", triggered=self._quit)
+		self._prefAction = QtWidgets.QAction("Preferences", self.ui, statusTip="Preferences", triggered=self._pref)
+		self._aboutAction = QtWidgets.QAction("About", self.ui, statusTip="About", triggered=self._about)
+		self._quitAction = QtWidgets.QAction("Quit", self.ui, statusTip="Quit", triggered=self._quit)
 		self._helpMenu.addAction(self._aboutAction)
 		self._helpMenu.addAction(self._prefAction)
 		self._helpMenu.addAction(self._quitAction)
-		self._menuBar.show()
-		#print("Added menu")
+		#self._menuBar.show()
+		print("Added menu")
 	
 	def initModuleDelegates(self):
 		self.manager = PluginManager(); #categories_filter={ "Modules": CVDelegate})

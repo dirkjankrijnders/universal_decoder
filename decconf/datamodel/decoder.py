@@ -56,12 +56,14 @@ class DecoderController(object):
 		#dec.parent = self.cvController
 		self._classes[str(dec._class)][1].append(dec._address);
 		treeitem = QtWidgets.QTreeWidgetItem(self._classes[str(dec._class)][0], [str(dec._address), "bla"])
+		treeitem.setData(0,101, dec)
 		print(self._classes[str(dec._class)][0])
-		self.decoders[treeitem] = dec;
+		#self.decoders[treeitem] = dec;
 	
 	def selectedDecoder(self):
-		return self.decoders[self.widget.selectedItems()[0]]
+		return self.widget.selectedItems()[0].data(0, 101)
+		#return self.decoders[self.widget.selectedItems()[0]]
 		
 	def select(self):
-		self.cvController.setDecoder(self.decoders[self.widget.selectedItems()[0]], self.tabwidget)
+		self.cvController.setDecoder(self.widget.selectedItems()[0].data(0, 101), self.tabwidget)
 		

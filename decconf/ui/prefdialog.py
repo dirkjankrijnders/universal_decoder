@@ -1,22 +1,23 @@
-from Qt import QtCore, QtGui
-from Qt import QtWidgets
+#from Qt import QtCore, QtGui
+#from Qt import QtWidgets
 import serial.tools.list_ports
 
-from decconf.ui.preferences import Ui_Dialog 
+#from decconf.ui.preferences import Ui_Dialog 
+from Qt import QtCore, QtGui, QtWidgets, QtCompat
 
-class PreferenceDialog(QtWidgets.QDialog):
+class PreferenceDialog(object):
 	"""docstring for PreferenceDialog"""
 	def __init__(self, config):
 		super(PreferenceDialog, self).__init__()
 		self.config = config
-		self.ui = Ui_Dialog()
-		self.ui.setupUi(self);
+		self.ui = QtCompat.loadUi("decconf/ui/preferences.ui")
+		#self.ui.setupUi(self);
 		self.applyConfig();
 		
-		self.ui.deviceCombo.addItem("{}".format("None"), userdata = None);
+		self.ui.deviceCombo.addItem("{}".format("None"), userData = None);
 		for ii, port in enumerate(serial.tools.list_ports.comports()):
-			self.ui.deviceCombo.addItem("{}".format(port[0]), userdata = port);
-		self.ui.deviceCombo.addItem("{}".format("Dummy"), userdata = 'dummy');
+			self.ui.deviceCombo.addItem("{}".format(port[0]), userData = port);
+		self.ui.deviceCombo.addItem("{}".format("Dummy"), userData = 'dummy');
 		
 		portIndex = self.ui.deviceCombo.findText(self.config.get('general', 'device'))
 		print("Found port index ", portIndex)
@@ -25,8 +26,9 @@ class PreferenceDialog(QtWidgets.QDialog):
 		self.ui.detectCheckBox.stateChanged.connect(self.detectChanged)
 		self.ui.connectCheckBox.stateChanged.connect(self.connectChanged)
 		self.ui.deviceCombo.currentIndexChanged.connect(self.deviceChanged)
-        #QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), Dialog.accept)
-	
+		# self.ui.show()
+		#QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), Dialog.accept)
+		
 	def applyConfig(self):
 		if self.config.getboolean("general", "autodetect"):
 			self.ui.detectCheckBox.setCheckState(QtCore.Qt.Checked)

@@ -13,7 +13,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("Decoder Configurator")
     my_gui = ControlMainWindow()
-    my_gui.show()
+    my_gui.ui.show()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
