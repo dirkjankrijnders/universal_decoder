@@ -9,42 +9,6 @@ from yapsy.IPlugin import IPlugin
 from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
 from decconf.protocols.loconet import LocoNet as LN
 
-#from decoders.dec10001 import dec10001controller
-class infoListModel(QtCore.QSortFilterProxyModel):
-	def __init__(self, parent):
-		super(infoListModel, self).__init__(parent);
-		self.parent = parent;
-	
-	def rowCount(self, parent):
-		return 7;
-	
-	def columnCount(self, parent):
-		return 2;
-		
-	def mapToSource(self, proxyIndex):
-		print(proxyIndex);
-		if not proxyIndex.isValid():
-			return QtCore.QModelIndex()
-		return(proxyIndex);
-		
-	def index(self, row,  column, parent = QtCore.QModelIndex()):
-		print(row)
-		print(column)
-		print(parent)
-		return QtCore.QModelIndex(row, column, self)
-		#if row == 1:
-		#	return self.createIndex(1019, 0);
-		if (parent.isValid()):
-		 	sourceParent = mapToSource(parent);
-	# QMapIterator<QPersistentModelIndex, QPersistentModelIndex> it(proxySourceParent);
-	# while (it.hasNext()) {
-	# it.next();
-	# if (it.value()  sourceParent && it.key().row()  row &&
-	# it.key().column() == column)
-	# return it.key();
-	# }
-	# return QModelIndex();
-	# }	
 class CVDelegate(IPlugin):
 	def __init__(self, parent = None):
 		super(CVDelegate, self).__init__();
