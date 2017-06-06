@@ -7,6 +7,7 @@ import numpy as np
 from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
 from decconf.protocols.loconet import LocoNet as LN
 
+from decconf.datamodel.CV import CVListModel
 
 class cvController(object):
 	"""docstring for cvController"""
@@ -16,6 +17,9 @@ class cvController(object):
 		self.decoder = None
 		
 	def setDecoder(self, dec, widget):
+		if not isinstance(dec, CVListModel):
+			return
+
 		if self.decoder is not None:
 			self.decoder.close()
 		
@@ -39,7 +43,7 @@ class DecoderController(object):
 		
 		self.widget = widget;
 		self._classes = dict();
-		self.decoders = dict();
+		self.decoders = list();
 		self.cvController = cvController;
 		self.tabwidget = tabwidget;
 		#self.plugins = plugins;
@@ -56,14 +60,14 @@ class DecoderController(object):
 		#dec.parent = self.cvController
 		self._classes[str(dec._class)][1].append(dec._address);
 		treeitem = QtWidgets.QTreeWidgetItem(self._classes[str(dec._class)][0], [str(dec._address), "bla"])
-		treeitem.setData(0,101, dec)
+		treeitem.setData(0, QtCore.Qt.UserRole, dec)
 		print(self._classes[str(dec._class)][0])
-		#self.decoders[treeitem] = dec;
+		self.decoders.append(dec)
 	
 	def selectedDecoder(self):
-		return self.widget.selectedItems()[0].data(0, 101)
+		return self.widget.selectedItems()[0].data(0, QtCore.Qt.UserRole)
 		#return self.decoders[self.widget.selectedItems()[0]]
 		
 	def select(self):
-		self.cvController.setDecoder(self.widget.selectedItems()[0].data(0, 101), self.tabwidget)
+		self.cvController.setDecoder(self.widget.selectedItems()[0].data(0, QtCore.Qt.UserRole), self.tabwidget)
 		
