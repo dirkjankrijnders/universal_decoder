@@ -119,6 +119,11 @@ class CVListModel(QtCore.QAbstractTableModel):
 	def data(self, index, role = QtCore.Qt.DisplayRole):
 		if not index.isValid():
 			return None
+		elif role == QtCore.Qt.UserRole:
+			if index.row() in [1018, 1019, 1020, 1021, 1022, 1023, 1024, 1028, 1029, 1030, 1031, 1032]:
+				return "info"
+			else:
+				return "none"
 		elif role != QtCore.Qt.DisplayRole:
 			return None
 		cv = index.row();

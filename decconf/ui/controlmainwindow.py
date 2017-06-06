@@ -168,6 +168,8 @@ class ControlMainWindow(object): #QtWidgets.QMainWindow):
 	def infodialog(self):
 		if self.lb is not None:
 			dec = self.decodercont.selectedDecoder();
+			if dec is None:
+				return
 			dec.readCV(1018); # Temperature
 			dec.readCV(1019); # UID bytes 0-1
 			dec.readCV(1020); # UID bytes 2-3
@@ -182,13 +184,17 @@ class ControlMainWindow(object): #QtWidgets.QMainWindow):
 			dec.readCV(1032); # Collisions
 			
 			from decconf.ui.infodialog import Ui_Dialog
-			from decconf.datamodel.CV import infoListModel
+			from decconf.datamodel.CV import CVListModel
 			
-			infoDialog = QtGui.QDialog(self)
-			infoUi = Ui_Dialog();
-			infoUi.setupUi(infoDialog);
-			infoUi.tableView.setModel(infoListModel(dec));
-			infoDialog.show();
+			# infoDialog = QtGui.QDialog(self)
+			infoUi = QtCompat.loadUi("decconf/ui/infodialog.ui")
+			#infoUi.setupUi(infoDialog);
+			filter = QtCore.QSortFilterProxyModel()
+			filter.setFilterRole(QtCore.Qt.UserRole)
+			filter.setFilterRegExp("info")
+			filter.setSourceModel(dec)
+			infoUi.tableView.setModel(filter);
+			infoUi.exec();
 			
 	def detectModules(self):
 		if self.lb is not None:
