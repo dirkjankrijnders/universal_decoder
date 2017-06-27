@@ -1,3 +1,5 @@
+appdirs
+yapsy
 nose
 nosexcover
 coverage
