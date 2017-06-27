@@ -176,6 +176,17 @@ class CVListModel(QtCore.QAbstractTableModel):
 	def row2cv(self, row):
 		return row
 		
+	def writeCSV(self, fid):
+		import csv
+		towrite = []
+		for i in range(len(self.CVs)):
+			#if self.CVs[i]:
+			towrite.append([i, self.CVs[i]])
+		print(towrite)
+		#np.savetxt(fid, towrite, delimiter=";")  #, header = ";".join(self.header))
+		writer = csv.writer(fid)
+		writer.writerows(towrite)
+		
 class cvController(object):
 	"""docstring for cvController"""
 	def __init__(self, tableView):
