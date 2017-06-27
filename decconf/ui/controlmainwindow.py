@@ -255,6 +255,13 @@ class ControlMainWindow(object): #QtWidgets.QMainWindow):
 		aboutMsgBox.setText("Decoder configurator Loconet CV based decoders");
 		aboutMsgBox.exec()
 		
+	def _export(self):
+		filename = file_name = QtWidgets.QFileDialog.getSaveFileName(self.ui, "Export Data File", "", "CSV data files (*.csv)")
+		if filename:
+			print("File to export to: {}".format(filename))
+			with open(filename[0], 'wt') as fid:
+				self.decodercont.selectedDecoder().writeCSV(fid)
+
 	def _quit(self):
 		try:
 			self.decodercont.selectedDecoder().close();
@@ -283,9 +290,12 @@ class ControlMainWindow(object): #QtWidgets.QMainWindow):
 		#self._menuBar.setNativeMenuBar(True)
 		#self.setMenuBar(self._menuBar)
 		self._helpMenu = self._menuBar.addMenu("Help")
+		self._fileMenu = self._menuBar.addMenu("File")
 		self._prefAction = QtWidgets.QAction("Preferences", self.ui, statusTip="Preferences", triggered=self._pref)
 		self._aboutAction = QtWidgets.QAction("About", self.ui, statusTip="About", triggered=self._about)
+		self._exportAction = QtWidgets.QAction("Export", self.ui, statusTip="Export", triggered=self._export)
 		self._quitAction = QtWidgets.QAction("Quit", self.ui, statusTip="Quit", triggered=self._quit)
+		self._fileMenu.addAction(self._exportAction)
 		self._helpMenu.addAction(self._aboutAction)
 		self._helpMenu.addAction(self._prefAction)
 		self._helpMenu.addAction(self._quitAction)
