@@ -2,206 +2,210 @@ from copy import deepcopy
 from time import sleep
 
 from Qt import QtCore, QtGui
-import numpy as np
 
 from yapsy.IPlugin import IPlugin
 
-from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parse_LNCV_message, LNCVWriteMessage
-from decconf.protocols.loconet import LocoNet as LN
+from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, \
+    writeModuleLNCV, LNCVReadMessage, parse_LNCV_message, LNCVWriteMessage
+
 
 class CVDelegate(IPlugin):
-	def __init__(self, parent = None):
-		super(CVDelegate, self).__init__();
-		self.parent = parent;
-		
-	def hasGui(self):
-		return False;
-	
-	def isEditable(self):
-		return(True);
-	
-	def cvDescription(self, cv):
-		return "CV {}".format(cv)
-	def controller(self):
-		return None
-	
-	def generalCVs(self):
-		return [1,7,8];
-	
-	def setCV(self, cv, value):
-		pass
-	
-	def formatCV(self, cv):
-		return self.parent.CVs[cv];
-		
+    def __init__(self, parent=None):
+        super(CVDelegate, self).__init__()
+        self.parent = parent
+
+    def hasGui(self):
+        return False
+
+    def isEditable(self):
+        return True
+
+    def cvDescription(self, cv):
+        return "CV {}".format(cv)
+
+    def controller(self, tabwidget):
+        return None
+
+    def generalCVs(self):
+        return [1, 7, 8]
+
+    def setCV(self, cv, value):
+        pass
+
+    def formatCV(self, cv):
+        return self.parent.CVs[cv]
+
+    def close(self):
+        pass
+
+
 class CVListModel(QtCore.QAbstractTableModel):
-	"""	desc = {"10001": [[1, "Address", 1, 1], [6, "No configured pins", 1, 1], [7, "Manufacturer", 1, 0], [8, "Version", 1, 0], [9, "Pin configuration slot 1",1 ,1], [10, "Pin configuration slot 2",1,1], [32, "peri_conf_1[0]",1 ,1 ], [33, "peri_conf_1[1]", 1, 1]],
-			"10002": [[7, "Manufacturer", 1, 0], [8, "Version", 1, 0]],
-			"5001": [[7, "Manufacturer", 1, 0], [8, "Version", 1, 0]]}
-	"""	
-	"""Represents a list of CV's"""
-	def __init__(self, _class, _address, descriptionDelegate = None, cs = None):
-		super(CVListModel, self).__init__()
-		if descriptionDelegate is not None:
-			self.descriptionDelegate = descriptionDelegate
-			self.descriptionDelegate.parent = self;
-		else:
-			self.descriptionDelegate = CVDelegate(self);
-		self._class = _class
-		self._address = _address
-		self.cs = cs
-		
-		self.CVs = list();
-#		self.CVs = dict();
-#		self.show = [0 for cv in range(1,512)];
-		for cv in range(1, 1100):
-			self.CVs.append('');
+    """Represents a list of CV's"""
 
-		self.header = ["CV", "Description", "Value"];
-		
-	def open(self):
-		if self.cs == None:
-			return None
-		
-		self.cs.write(startModuleLNCVProgramming(self._class, self._address));
-		
-	def close(self):
-		if self.cs == None:
-			return None
-		
-		self.cs.write(stopModuleLNCVProgramming(self._class, self._address));
-		self.descriptionDelegate.close();
-	def programmingAck(self, pkt):
-		self.readAllCV();
-			
-	def rowCount(self, parent):
-		return len(self.CVs);
-		
-	def columnCount(self, parent):
-		return 3;
-	
-	def data(self, index, role = QtCore.Qt.DisplayRole):
-		if not index.isValid():
-			return None
-		elif role == QtCore.Qt.UserRole:
-			if index.row() in [1018, 1019, 1020, 1021, 1022, 1023, 1024, 1028, 1029, 1030, 1031, 1032]:
-				return "info"
-			else:
-				return "none"
-		elif role != QtCore.Qt.DisplayRole:
-			return None
-		cv = index.row();
-		if cv is None:
-			return None
-		desc = self.descriptionDelegate.cvDescription(cv);
-		
-		vals = [cv, desc, self.descriptionDelegate.formatCV(cv)]
-		return vals[index.column()]
-		#cvdesc = deepcopy(self.desc[str(self._class)][index.row()])
-		#cvdesc.append(self.CVs[str(cvdesc[0])])
-		#return cvdesc[index.column()]
-	
-	def setData(self, index, value, role = QtCore.Qt.EditRole):
-		
-		cv = index.row();
-		self.CVs[cv] = value
-		if role == QtCore.Qt.EditRole:
-			try:
-				self.writeCV(int(cv), int(value));
-			except:
-				self.setCV(cv, value);
-				
-		self.dataChanged.emit(index,index);
-		return True
-		
-	def flags(self, index):
-		if index.column() == 2:
-			if self.descriptionDelegate.isEditable:
-				return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
-			else:
-				return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-		else:
-			return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+    def __init__(self, _class, _address, descriptionDelegate=None, cs=None):
+        super(CVListModel, self).__init__()
+        if descriptionDelegate is not None:
+            self.descriptionDelegate = descriptionDelegate
+            self.descriptionDelegate.parent = self
+        else:
+            self.descriptionDelegate = CVDelegate(self)
+        self._class = _class
+        self._address = _address
+        self.cs = cs
 
-	def headerData(self, section, orientation, role):
-		if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-			return self.header[section]
-		return None
+        self.CVs = list()
+        for cv in range(1, 1100):
+            self.CVs.append('')
 
-	def readAllCV(self):
-		for cv in self.descriptionDelegate.generalCVs():
-			self.readCV(cv);
+        self.header = ["CV", "Description", "Value"]
 
-		#for cv in Decoder.desc[str(self._class)]:
-		#	self.readCV(cv[0]);
-			#sleep(0.1)
-			
-	def messageConfirmed(self, msg, reply):
-		print("Message confirmed: ", msg);
-		if isinstance(msg, LNCVReadMessage):
-			pkt = parse_LNCV_message(bytearray(reply))
-			self.setCV(pkt['lncvNumber'], pkt['lncvValue'])
-		if isinstance(msg, LNCVWriteMessage):
-			pkt = parse_LNCV_message(bytearray(msg.msg))
-			self.setCV(pkt['lncvNumber'], pkt['lncvValue'])			
-			
-	def readCV(self, cv):
-		self.cs.addToQueue(LNCVReadMessage(readModuleLNCV(self._class, cv), self))
+    def open(self):
+        if self.cs is None:
+            return None
 
-	def writeCV(self, cv, value):
-		if self.cs is not None and self.getCV(cv) != value:
-			self.cs.addToQueue(LNCVWriteMessage(writeModuleLNCV(self._class, cv, value), self))
-		
-	def setCV(self, cv, value):
-		self.CVs[cv] = value
-		print("CVs:", self.CVs);
-		row = cv
-		print("cv: ", cv, "row: ", row)
-		if row is not None:
-			self.dataChanged.emit(self.createIndex(row, 2), self.createIndex(row, 2))
-		self.descriptionDelegate.setCV(cv, value);
-		#self.emit(QtCore.SIGNAL("dataChanged()"));
-	
-	def getCV(self, cv):
-		print("Accessed decoder CV: ", cv)
-		print("returned: ", self.CVs[cv])
-		return self.CVs[cv]
-		
-	def hasGui(self):
-		return self.descriptionDelegate.hasGui();
-	
-	def controller(self, tabwidget):
-		return self.descriptionDelegate.controller(tabwidget);
-		
-	def row2cv(self, row):
-		return row
-		
-	def writeCSV(self, fid):
-		import csv
-		towrite = []
-		for i in range(len(self.CVs)):
-			#if self.CVs[i]:
-			towrite.append([i, self.CVs[i]])
-		print(towrite)
-		#np.savetxt(fid, towrite, delimiter=";")  #, header = ";".join(self.header))
-		writer = csv.writer(fid)
-		writer.writerows(towrite)
-		
+        self.cs.write(startModuleLNCVProgramming(self._class, self._address))
+
+    def close(self):
+        if self.cs is None:
+            return None
+
+        self.cs.write(stopModuleLNCVProgramming(self._class, self._address))
+        self.descriptionDelegate.close()
+
+    def programmingAck(self, pkt):
+        self.readAllCV()
+
+    def rowCount(self, parent):
+        return len(self.CVs)
+
+    def columnCount(self, parent):
+        return 3
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        elif role == QtCore.Qt.UserRole:
+            if index.row() in [1018, 1019, 1020, 1021, 1022, 1023, 1024, 1028, 1029, 1030, 1031, 1032]:
+                return "info"
+            else:
+                return "none"
+        elif role != QtCore.Qt.DisplayRole:
+            return None
+        cv = index.row()
+        if cv is None:
+            return None
+        desc = self.descriptionDelegate.cvDescription(cv)
+
+        vals = [cv, desc, self.descriptionDelegate.formatCV(cv)]
+        return vals[index.column()]
+
+    # cvdesc = deepcopy(self.desc[str(self._class)][index.row()])
+    # cvdesc.append(self.CVs[str(cvdesc[0])])
+    # return cvdesc[index.column()]
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+
+        cv = index.row()
+        self.CVs[cv] = value
+        if role == QtCore.Qt.EditRole:
+            try:
+                self.writeCV(int(cv), int(value))
+            except:
+                self.setCV(cv, value)
+
+        self.dataChanged.emit(index, index)
+        return True
+
+    def flags(self, index):
+        if index.column() == 2:
+            if self.descriptionDelegate.isEditable:
+                return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+            else:
+                return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        else:
+            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+
+    def headerData(self, section, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self.header[section]
+        return None
+
+    def readAllCV(self):
+        for cv in self.descriptionDelegate.generalCVs():
+            self.readCV(cv)
+
+    def messageConfirmed(self, msg, reply):
+        print("Message confirmed: ", msg)
+        if isinstance(msg, LNCVReadMessage):
+            pkt = parse_LNCV_message(bytearray(reply))
+            self.setCV(pkt['lncvNumber'], pkt['lncvValue'])
+        if isinstance(msg, LNCVWriteMessage):
+            pkt = parse_LNCV_message(bytearray(msg.msg))
+            self.setCV(pkt['lncvNumber'], pkt['lncvValue'])
+
+    def readCV(self, cv):
+        self.cs.add_to_queue(LNCVReadMessage(readModuleLNCV(self._class, cv), self))
+
+    def writeCV(self, cv, value):
+        if self.cs is not None and self.getCV(cv) != value:
+            self.cs.add_to_queue(LNCVWriteMessage(writeModuleLNCV(self._class, cv, value), self))
+
+    def setCV(self, cv, value):
+        self.CVs[cv] = value
+        print("CVs:", self.CVs)
+        row = cv
+        print("cv: ", cv, "row: ", row)
+        if row is not None:
+            self.dataChanged.emit(self.createIndex(row, 2), self.createIndex(row, 2))
+        self.descriptionDelegate.setCV(cv, value)
+
+    # self.emit(QtCore.SIGNAL("dataChanged()"))
+
+    def getCV(self, cv):
+        print("Accessed decoder CV: ", cv)
+        print("returned: ", self.CVs[cv])
+        return self.CVs[cv]
+
+    def hasGui(self):
+        return self.descriptionDelegate.hasGui()
+
+    def controller(self, widget):
+        return self.descriptionDelegate.controller(widget)
+
+    def row2cv(self, row):
+        return row
+
+    def writeCSV(self, fid):
+        import csv
+        towrite = []
+        for i in range(len(self.CVs)):
+            # if self.CVs[i]:
+            towrite.append([i, self.CVs[i]])
+        print(towrite)
+        # np.savetxt(fid, towrite, delimiter="")  #, header = "".join(self.header))
+        writer = csv.writer(fid)
+        writer.writerows(towrite)
+
+
 class cvController(object):
-	"""docstring for cvController"""
-	def __init__(self, tableView):
-		super(cvController, self).__init__()
-		self.tableView = tableView
-		self.decoder = None
-		
-	def setDecoder(self, dec, widget):
-		if self.decoder is not None:
-			self.decoder.close()
-		
-		self.decoder = dec;
-		self.decoder.open()
-		self.tableView.setModel(self.decoder);
-		self.decui = dec.controller(widget)
-		
-	def readCV(self, cv, value):
-		self.decoder.setCV(cv, value);
+    """docstring for cvController"""
+
+    def __init__(self, tableView):
+        super(cvController, self).__init__()
+        self.tableView = tableView
+        self.decoder = None
+        self.decui = None
+
+
+def setDecoder(self, dec, widget):
+    if self.decoder is not None:
+        self.decoder.close()
+
+    self.decoder = dec
+    self.decoder.open()
+    self.tableView.setModel(self.decoder)
+    self.decui = dec.controller(widget)
+
+
+def readCV(self, cv, value):
+    self.decoder.setCV(cv, value)

@@ -48,10 +48,6 @@ class TestLNCV(unittest.TestCase):
         self.assertTrue(cmsg.match(bytes.fromhex('e50f01050021001127020012000000')))
         self.assertTrue(self.okCalled)
 
-        # self.assertTrue(cmsg.match(bytes.fromhex('ed2634ff')))
-        # self.assertTrue(self.okCalled)
-
-
     def testWriteCV(self):
         msg = writeModuleLNCV(10001, 0, 2)
         cmsg = LNCVWriteMessage(msg, self)
@@ -83,7 +79,7 @@ class TestLNCV(unittest.TestCase):
         info = list(parse_LNCV_message(buf).keys())
         info.sort()
         expected_keys = ['OPC', 'len', 'SRC', 'DSTL', 'DSTH', 'ReqId', 'PXCT1',
-                              'deviceClass', 'lncvNumber', 'lncvValue', 'flags', 'checksum']
+                         'deviceClass', 'lncvNumber', 'lncvValue', 'flags', 'checksum']
         expected_keys.sort()
         self.assertListEqual(info, expected_keys)
         self.assertEqual(parse_LNCV_message(buf)['deviceClass'], 10001)

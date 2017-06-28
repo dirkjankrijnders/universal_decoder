@@ -17,7 +17,7 @@ from decconf.datamodel.decoder import DecoderController, cvController
 from decconf.datamodel.CV import CVListModel
 from decconf.datamodel.CV import CVDelegate
 
-from dummy_serial import dummySerial
+from dummy_serial import DummySerial
 
 from decconf.protocols.loconet import LocoNet as Ln
 from decconf.protocols.loconet import makeLNCVresponse, parse_LNCV_message, format_loconet_message, checksum_loconet_buffer
@@ -134,7 +134,7 @@ class ControlMainWindow(object):
             print("Connecting!", port)
             # self.logger.info("Connecting!", port)
             if port == 'Dummy':
-                self.serial = dummySerial()
+                self.serial = DummySerial()
                 self.ui.connectserial.setText("Disconnect")
                 self.lb = LocoBuffer(self.serial, self.sendQueue, self.recvQueue)
                 self.connected = True
@@ -230,8 +230,9 @@ class ControlMainWindow(object):
     def _about(self):
         about_msg_box = QtWidgets.QMessageBox()
         about_msg_box.setText("Decoder configurator Loconet CV based decoders")
-        about_msg_box.setInformativeText("Qt Version: {}\n"
-                              "Binding used: {} {}".format(__qt_version__, __binding__, __binding_version__))
+        about_msg_box.setInformativeText(
+            "Qt Version: {}\n"
+            "Binding used: {} {}".format(__qt_version__, __binding__, __binding_version__))
         about_msg_box.exec()
 
     def _export(self):
@@ -244,7 +245,7 @@ class ControlMainWindow(object):
     def _quit(self):
         try:
             self.decodercont.selectedDecoder().close()
-        except:
+        except Exception as e:
             pass
 
         time.sleep(2)
