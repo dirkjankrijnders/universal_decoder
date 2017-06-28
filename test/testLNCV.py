@@ -4,7 +4,7 @@ import unittest
 
 from decconf.protocols.loconet import recieve_loconet_bytes, LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, \
     startModuleLNCVProgramming, stopModuleLNCVProgramming, checksum_loconet_buffer, \
-    format_loconet_message, LocoNet, readModuleLNCV, LNCVReadMessage, parse_LNCV_message
+    format_loconet_message, LocoNet, readModuleLNCV, LNCVReadMessage, parse_LNCV_message, compute_PXCT_from_bytes
 
 
 class TestLNCV(unittest.TestCase):
@@ -18,7 +18,8 @@ class TestLNCV(unittest.TestCase):
     def test_recieve_loconet_bytes(self):
         input_buf = checksum_loconet_buffer(bytearray([LocoNet.OPC_GPOFF, 00]))
         self.assertEqual(recieve_loconet_bytes(input_buf), input_buf)
-        input_buf = bytearray.fromhex('e50f05494b1f8011270402650002DA')
+        input_buf = checksum_loconet_buffer(compute_PXCT_from_bytes(
+            bytearray.fromhex('e50f05494b1f8011270402650002DA')))
         self.assertEqual(recieve_loconet_bytes(input_buf), input_buf)
 
     def test_write_confirmed_message(self):
@@ -77,9 +78,14 @@ class TestLNCV(unittest.TestCase):
         buf = bytearray(b'\0' * 15)
         self.assertEqual(parse_LNCV_message(buf), None)  # Length correct for LNCV message, opcode not
         buf = writeModuleLNCV(10001, 0, 2)
-        self.assertListEqual(list(parse_LNCV_message(buf).keys()),
-                             ['OPC', 'len', 'SRC', 'DSTL', 'DSTH', 'ReqId', 'PXCT1',
-                              'deviceClass', 'lncvNumber', 'lncvValue', 'flags', 'checksum'])
+        self.assertIsInstance(parse_LNCV_message(buf), dict)
+        self.assertIsNotNone(parse_LNCV_message(buf).keys())
+        info = list(parse_LNCV_message(buf).keys())
+        info.sort()
+        expected_keys = ['OPC', 'len', 'SRC', 'DSTL', 'DSTH', 'ReqId', 'PXCT1',
+                              'deviceClass', 'lncvNumber', 'lncvValue', 'flags', 'checksum']
+        expected_keys.sort()
+        self.assertListEqual(info, expected_keys)
         self.assertEqual(parse_LNCV_message(buf)['deviceClass'], 10001)
 
     # noinspection PyTypeChecker
