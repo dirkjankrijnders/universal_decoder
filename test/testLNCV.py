@@ -4,7 +4,7 @@ import unittest
 
 from decconf.protocols.loconet import LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, \
     startModuleLNCVProgramming, stopModuleLNCVProgramming, checksum_loconet_buffer, \
-    format_loconet_message, LocoNet
+    format_loconet_message, LocoNet, readModuleLNCV, LNCVReadMessage
 
 
 class TestLNCV(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestLNCV(unittest.TestCase):
     def messageConfirmed(self, msg, reply):
         self.okCalled = True
 
-    def testConfirmedMessage(self):
+    def test_write_confirmed_message(self):
         msg = writeModuleLNCV(10001, 0, 2)
         reply = bytes.fromhex('ed2634df')
         mask = bytes.fromhex('ffffff00')
@@ -25,6 +25,25 @@ class TestLNCV(unittest.TestCase):
         self.assertFalse(self.okCalled)
         self.assertTrue(cmsg.match(bytes.fromhex('ed2634ff')))
         self.assertTrue(self.okCalled)
+
+    def test_read_confirmed_message(self):
+        msg = readModuleLNCV(10001, 2)
+        reply = bytes([LocoNet.OPC_PEER_XFER, 15, LocoNet.LNCV_SRC_KPU, LocoNet.LNCV_MODULE_DSTL,
+                       LocoNet.LNCV_MODULE_DSTH, LocoNet.LNCV_REQID_CFGREQUEST, 0, 17, 39, 2, 0, 0, 18, 0, 0])
+        mask = bytes.fromhex('ffff00000000ffffffff0000000000')
+
+        cmsg = LNCVConfirmedMessage(msg, reply, mask, self)
+        self.assertTrue(cmsg.match(bytes.fromhex('e50f01050021001127020012000000')))
+        self.assertTrue(self.okCalled)
+        self.okCalled = False
+
+        cmsg = LNCVReadMessage(readModuleLNCV(10001, 2), self)
+        self.assertTrue(cmsg.match(bytes.fromhex('e50f01050021001127020012000000')))
+        self.assertTrue(self.okCalled)
+
+        # self.assertTrue(cmsg.match(bytes.fromhex('ed2634ff')))
+        # self.assertTrue(self.okCalled)
+
 
     def testWriteCV(self):
         msg = writeModuleLNCV(10001, 0, 2)
