@@ -157,7 +157,7 @@ def recieve_loconet_bytes(buf: bytearray) -> bytearray:
         # Packet not complete so add the current byte to the checksum
         checksum ^= newbyte
 
-    return None
+    return bytearray()
 
 
 def checksum_loconet_buffer(buf: bytearray) -> bytearray:
@@ -173,6 +173,7 @@ def checksum_loconet_buffer(buf: bytearray) -> bytearray:
     Buffer with checksum: bytearray
     """
     checksum = LN_CHECKSUM_SEED
+    # noinspection PyTypeChecker
     for newbyte in buf[:-1]:
         checksum ^= newbyte
     buf[-1] = checksum
@@ -235,6 +236,7 @@ def parse_LNCV_message(buf):
 
     if (buf[0] == LocoNet.OPC_IMM_PACKET) or (buf[0] == LocoNet.OPC_PEER_XFER):
         buf = compute_bytes_from_PXCT(buf)
+        # noinspection PyTypeChecker
         pkt = struct.unpack(LNCV_fmt, buf)
         return dict(list(zip(LNCV_names, pkt)))
     else:
@@ -277,11 +279,11 @@ def stopModuleLNCVProgramming(deviceClass, address):
                             req=LocoNet.LNCV_REQID_CFGREQUEST)
 
 
-def readModuleLNCV(deviceClass, address, cv):
+def readModuleLNCV(deviceClass, cv):
     return makeLNCVresponse(deviceClass, cv, 0, 0, opc=LocoNet.OPC_IMM_PACKET, req=LocoNet.LNCV_REQID_CFGREQUEST)
 
 
-def writeModuleLNCV(deviceClass, address, cv, value):
+def writeModuleLNCV(deviceClass, cv, value):
     return makeLNCVresponse(deviceClass, cv, value, 0, opc=LocoNet.OPC_IMM_PACKET, req=LocoNet.LNCV_REQID_CFGWRITE)
 
 

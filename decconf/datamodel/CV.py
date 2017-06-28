@@ -146,11 +146,11 @@ class CVListModel(QtCore.QAbstractTableModel):
 			self.setCV(pkt['lncvNumber'], pkt['lncvValue'])			
 			
 	def readCV(self, cv):
-		self.cs.addToQueue(LNCVReadMessage(readModuleLNCV(self._class, self._address, cv), self))
+		self.cs.addToQueue(LNCVReadMessage(readModuleLNCV(self._class, cv), self))
 
 	def writeCV(self, cv, value):
 		if self.cs is not None and self.getCV(cv) != value:
-			self.cs.addToQueue(LNCVWriteMessage(writeModuleLNCV(self._class, self._address, cv, value), self))
+			self.cs.addToQueue(LNCVWriteMessage(writeModuleLNCV(self._class, cv, value), self))
 		
 	def setCV(self, cv, value):
 		self.CVs[cv] = value

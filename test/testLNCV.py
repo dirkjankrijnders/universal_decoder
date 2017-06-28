@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import logging
 import unittest
-from decconf.protocols.loconet import LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, readModuleLNCV, \
-    startModuleLNCVProgramming, stopModuleLNCVProgramming, makeLNCVresponse, checksum_loconet_buffer, \
+
+from decconf.protocols.loconet import LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, \
+    startModuleLNCVProgramming, stopModuleLNCVProgramming, checksum_loconet_buffer, \
     format_loconet_message, LocoNet
 
 
@@ -10,46 +11,42 @@ class TestLNCV(unittest.TestCase):
     def setUp(self):
         self.okCalled = False
 
+    # noinspection PyUnusedLocal
     def messageConfirmed(self, msg, reply):
-        self.okCalled = True;
+        self.okCalled = True
 
     def testConfirmedMessage(self):
-        msg = writeModuleLNCV(10001, 127, 0, 2);
-        reply = bytes.fromhex('ed2634df');
-        mask = bytes.fromhex('ffffff00');
+        msg = writeModuleLNCV(10001, 0, 2)
+        reply = bytes.fromhex('ed2634df')
+        mask = bytes.fromhex('ffffff00')
 
-        cmsg = LNCVConfirmedMessage(msg, reply, mask, self);
-        self.assertFalse(cmsg.match(bytes.fromhex('ed2734ff')));
-        self.assertFalse(self.okCalled);
-        self.assertTrue(cmsg.match(bytes.fromhex('ed2634ff')));
-        self.assertTrue(self.okCalled);
+        cmsg = LNCVConfirmedMessage(msg, reply, mask, self)
+        self.assertFalse(cmsg.match(bytes.fromhex('ed2734ff')))
+        self.assertFalse(self.okCalled)
+        self.assertTrue(cmsg.match(bytes.fromhex('ed2634ff')))
+        self.assertTrue(self.okCalled)
 
     def testWriteCV(self):
-        msg = writeModuleLNCV(10001, 127, 0, 2);
-        cmsg = LNCVWriteMessage(msg, self);
-        self.assertFalse(cmsg.match(bytes.fromhex('ed2734ff')));
-        self.assertFalse(self.okCalled);
-        self.assertTrue(cmsg.match(bytes.fromhex('b46d34ff')));
-        self.assertTrue(self.okCalled);
+        msg = writeModuleLNCV(10001, 0, 2)
+        cmsg = LNCVWriteMessage(msg, self)
+        self.assertFalse(cmsg.match(bytes.fromhex('ed2734ff')))
+        self.assertFalse(self.okCalled)
+        self.assertTrue(cmsg.match(bytes.fromhex('b46d34ff')))
+        self.assertTrue(self.okCalled)
 
     def testStartModuleLNCVProgramming(self):
-        self.assertEqual(bytes.fromhex('ED0F0105002150112700007F000021'), startModuleLNCVProgramming(10001, 255));
+        self.assertEqual(bytes.fromhex('ED0F0105002150112700007F000021'), startModuleLNCVProgramming(10001, 255))
 
     def testStopModuleLNCVProgramming(self):
-        self.assertEqual(bytes.fromhex('ED0F0105002110112700007F004021'), stopModuleLNCVProgramming(10001, 255));
+        self.assertEqual(bytes.fromhex('ED0F0105002110112700007F004021'), stopModuleLNCVProgramming(10001, 255))
 
     def testMakeLNCVMessage(self):
-        buf = bytearray.fromhex('e50f05494b1f8011270402650002DA');
+        buf = bytearray.fromhex('e50f05494b1f8011270402650002DA')
         self.assertEqual(buf, checksum_loconet_buffer(buf))
 
-    # self.assertEqual(bytes.fromhex('e50f05494b1f8011270402650002DA'), makeLNCVresponse(10001,0x0204,101,0x02))
-    # msg = readModuleLNCV(10001, 127, 1);
-    # reply = bytes.fromhex('ED 0F 01 05 00 21 10 11 27 01 00 7F 00 00 60');
-    # mask  = bytes.fromhex('')
-
-
+    # noinspection PyTypeChecker
     def test_format_LNCV_message(self):
-        msg = writeModuleLNCV(10001, 127, 0, 2)
+        msg = writeModuleLNCV(10001, 0, 2)
         info = format_loconet_message(msg)
         expected_hex = "ED 0F 01 05 00 20 00 11 27 00 00 02 00 00 0D"
         self.assertEqual(expected_hex, info[0])
