@@ -2,9 +2,9 @@
 import logging
 import unittest
 
-from decconf.protocols.loconet import LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, \
+from decconf.protocols.loconet import recieve_loconet_bytes, LNCVConfirmedMessage, LNCVWriteMessage, writeModuleLNCV, \
     startModuleLNCVProgramming, stopModuleLNCVProgramming, checksum_loconet_buffer, \
-    format_loconet_message, LocoNet, readModuleLNCV, LNCVReadMessage
+    format_loconet_message, LocoNet, readModuleLNCV, LNCVReadMessage, parse_LNCV_message
 
 
 class TestLNCV(unittest.TestCase):
@@ -14,6 +14,12 @@ class TestLNCV(unittest.TestCase):
     # noinspection PyUnusedLocal
     def messageConfirmed(self, msg, reply):
         self.okCalled = True
+
+    def test_recieve_loconet_bytes(self):
+        input_buf = checksum_loconet_buffer(bytearray([LocoNet.OPC_GPOFF, 00]))
+        self.assertEqual(recieve_loconet_bytes(input_buf), input_buf)
+        input_buf = bytearray.fromhex('e50f05494b1f8011270402650002DA')
+        self.assertEqual(recieve_loconet_bytes(input_buf), input_buf)
 
     def test_write_confirmed_message(self):
         msg = writeModuleLNCV(10001, 0, 2)
@@ -48,6 +54,8 @@ class TestLNCV(unittest.TestCase):
     def testWriteCV(self):
         msg = writeModuleLNCV(10001, 0, 2)
         cmsg = LNCVWriteMessage(msg, self)
+        self.assertFalse(cmsg.match(bytes.fromhex('ed27')))
+        self.assertFalse(self.okCalled)
         self.assertFalse(cmsg.match(bytes.fromhex('ed2734ff')))
         self.assertFalse(self.okCalled)
         self.assertTrue(cmsg.match(bytes.fromhex('b46d34ff')))
@@ -62,6 +70,17 @@ class TestLNCV(unittest.TestCase):
     def testMakeLNCVMessage(self):
         buf = bytearray.fromhex('e50f05494b1f8011270402650002DA')
         self.assertEqual(buf, checksum_loconet_buffer(buf))
+
+    def test_parse_LNCV_message(self):
+        buf = checksum_loconet_buffer(bytearray([LocoNet.OPC_GPOFF, 0]))
+        self.assertEqual(parse_LNCV_message(buf), None)  # Length incorrect for LNCV message
+        buf = bytearray(b'\0' * 15)
+        self.assertEqual(parse_LNCV_message(buf), None)  # Length correct for LNCV message, opcode not
+        buf = writeModuleLNCV(10001, 0, 2)
+        self.assertListEqual(list(parse_LNCV_message(buf).keys()),
+                             ['OPC', 'len', 'SRC', 'DSTL', 'DSTH', 'ReqId', 'PXCT1',
+                              'deviceClass', 'lncvNumber', 'lncvValue', 'flags', 'checksum'])
+        self.assertEqual(parse_LNCV_message(buf)['deviceClass'], 10001)
 
     # noinspection PyTypeChecker
     def test_format_LNCV_message(self):

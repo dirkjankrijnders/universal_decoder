@@ -129,11 +129,9 @@ def recieve_loconet_bytes(buf: bytearray) -> bytearray:
                 # If the Expected Length is 0 and the newbyte is not an Command
                 # OPC code, then it must be the length byte for a variable
                 # length packet
-            elif readexplen == 0:
+            else:
                 readexplen = newbyte
                 gotnewlength = 1
-            else:
-                gotnewlength = 0
 
         # Do we have a complete packet
         accumulator = accumulator + bytes([newbyte])
