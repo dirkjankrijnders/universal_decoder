@@ -19,7 +19,7 @@ class CSVWriter(object):
 		
 		
 	def messageConfirmed(self, msg, reply):
-		lncv = parseLNCVmsg(bytearray(reply));
+		lncv = parse_LNCV_message(bytearray(reply));
 		print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']), file=self.fid);
 		self.ncv -=1;
 
@@ -31,7 +31,7 @@ class CSVReader(object):
 		
 		
 	def messageConfirmed(self, msg, reply):
-		#lncv = parseLNCVmsg(bytearray(reply));
+		#lncv = parse_LNCV_message(bytearray(reply));
 		#print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']), file=self.fid);
 		self.ncv += 1;
 
@@ -43,7 +43,7 @@ class StatsPrinter(object):
 
 
 	def messageConfirmed(self, msg, reply):
-		lncv = parseLNCVmsg(bytearray(reply));
+		lncv = parse_LNCV_message(bytearray(reply));
 		print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']));
 		self.ncv -=1;
 

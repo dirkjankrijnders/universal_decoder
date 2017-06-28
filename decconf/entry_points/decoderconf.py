@@ -5,8 +5,8 @@ import sys
 
 from Qt import QtWidgets
 
-
 from decconf.ui.controlmainwindow import ControlMainWindow
+
 
 def main():
     """ Nothing but a Qt application starter """
@@ -15,6 +15,7 @@ def main():
     my_gui = ControlMainWindow()
     my_gui.ui.show()
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()

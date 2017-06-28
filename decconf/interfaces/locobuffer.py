@@ -3,7 +3,7 @@ import threading
 import collections
 from queue import Queue
 
-from decconf.protocols.loconet import recvLnMsg, checksumLnBuf, LNMessage
+from decconf.protocols.loconet import recieve_loconet_bytes, checksum_loconet_buffer, LNMessage
 
 class LocoBuffer(object):
 	IDLE = 0;
@@ -38,7 +38,7 @@ class LocoBuffer(object):
 		buf = b""
 		while self.running:
 			buf += self.serial.read(1);
-			if recvLnMsg(buf):
+			if recieve_loconet_bytes(buf):
 				if buf == self.lastsend:
 					pass
 				else:
@@ -56,8 +56,8 @@ class LocoBuffer(object):
 	def write(self, buf):
 		#self.iq.push(buf);
 		#buf = bytearray(buf)
-		#buf = checksumLnBuf(buf);
-		if recvLnMsg(buf) is None:
+		#buf = checksum_loconet_buffer(buf);
+		if recieve_loconet_bytes(buf) is None:
 			self.logger.warn("Tried to send invalid packet: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)));
 			return
 		self.logger.debug("Push to send Queue: 0x {}".format( " ".join("{:02x}".format(b) for b in buf)))

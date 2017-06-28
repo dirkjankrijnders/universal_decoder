@@ -6,7 +6,7 @@ import numpy as np
 
 from yapsy.IPlugin import IPlugin
 
-from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
+from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parse_LNCV_message, LNCVWriteMessage
 from decconf.protocols.loconet import LocoNet as LN
 
 class CVDelegate(IPlugin):
@@ -139,10 +139,10 @@ class CVListModel(QtCore.QAbstractTableModel):
 	def messageConfirmed(self, msg, reply):
 		print("Message confirmed: ", msg);
 		if isinstance(msg, LNCVReadMessage):
-			pkt = parseLNCVmsg(bytearray(reply))
+			pkt = parse_LNCV_message(bytearray(reply))
 			self.setCV(pkt['lncvNumber'], pkt['lncvValue'])
 		if isinstance(msg, LNCVWriteMessage):
-			pkt = parseLNCVmsg(bytearray(msg.msg))
+			pkt = parse_LNCV_message(bytearray(msg.msg))
 			self.setCV(pkt['lncvNumber'], pkt['lncvValue'])			
 			
 	def readCV(self, cv):

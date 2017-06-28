@@ -4,7 +4,7 @@ from time import sleep
 from Qt import QtCore, QtGui, QtWidgets
 import numpy as np
 
-from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parseLNCVmsg, LNCVWriteMessage
+from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, writeModuleLNCV, LNCVReadMessage, parse_LNCV_message, LNCVWriteMessage
 from decconf.protocols.loconet import LocoNet as LN
 
 from decconf.datamodel.CV import CVListModel

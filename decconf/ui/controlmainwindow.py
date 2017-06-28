@@ -6,7 +6,7 @@ import queue
 
 from copy import deepcopy
 
-from Qt import QtCore, QtGui, QtWidgets, QtCompat
+from Qt import QtCore, QtGui, QtWidgets, QtCompat, __qt_version__, __binding__, __binding_version__
 import serial.tools.list_ports
 from appdirs import *
 
@@ -20,7 +20,7 @@ from decconf.datamodel.CV import CVDelegate
 from dummy_serial import dummySerial
 
 from decconf.protocols.loconet import LocoNet as Ln
-from decconf.protocols.loconet import makeLNCVresponse, parseLNCVmsg, formatLNmsg, checksumLnBuf
+from decconf.protocols.loconet import makeLNCVresponse, parse_LNCV_message, format_loconet_message, checksum_loconet_buffer
 
 from decconf.interfaces.locobuffer import LocoBuffer
 
@@ -159,9 +159,9 @@ class ControlMainWindow(object):
     def powercontrol(self):
         if self.lb is not None:
             if self.ui.powerControl.isChecked():
-                self.lb.write(checksumLnBuf([Ln.OPC_GPON, 0x00]))
+                self.lb.write(checksum_loconet_buffer([Ln.OPC_GPON, 0x00]))
             else:
-                self.lb.write(checksumLnBuf([Ln.OPC_GPOFF, 0x00]))
+                self.lb.write(checksum_loconet_buffer([Ln.OPC_GPOFF, 0x00]))
 
     def infodialog(self):
         if self.lb is not None:
@@ -200,13 +200,11 @@ class ControlMainWindow(object):
             self.lb.write(buf)
 
     def parse_loconet_packet(self, data):
-        pkt = parseLNCVmsg(data)
+        pkt = parse_LNCV_message(data)
         if pkt is not None and pkt['SRC'] == Ln.LNCV_SRC_MODULE:
             print("parsed: ", " ".join("{:02x}".format(b) for b in data).upper())
             print("Flags: ", pkt['flags'])
             print(pkt)
-            # self.addClass(pkt['deviceClass']);
-            # self.addModule(pkt['deviceClass'], pkt['lncvValue']);
             if pkt['SRC'] == Ln.LNCV_SRC_MODULE and pkt['ReqId'] == Ln.LNCV_REQID_CFGREAD:
                 if pkt['lncvNumber'] == 0:
                     if pkt['flags'] == 0:
@@ -226,13 +224,14 @@ class ControlMainWindow(object):
 
     def recieve_loconet_packet(self, data):
         self.parse_loconet_packet(data)
-        _bytes, info = formatLNmsg(data)
+        _bytes, info = format_loconet_message(data)
         self.ui.ReceivedPacketsList.addItem(_bytes + "\t" + info)
-        print(data)
 
     def _about(self):
         about_msg_box = QtWidgets.QMessageBox()
         about_msg_box.setText("Decoder configurator Loconet CV based decoders")
+        about_msg_box.setInformativeText("Qt Version: {}\n"
+                              "Binding used: {} {}".format(__qt_version__, __binding__, __binding_version__))
         about_msg_box.exec()
 
     def _export(self):

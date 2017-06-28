@@ -8,11 +8,11 @@ class TestLocoNet(unittest.TestCase):
 	def testRecvLnMsg(self):
 		buf = bytes.fromhex('B0510F11');
 		
-		self.assertEqual(buf, recvLnMsg(buf))
+		self.assertEqual(buf, recieve_loconet_bytes(buf))
 	
 	def testComputeBytesFromPXCT(self):
 		buf = bytearray.fromhex('ED0F0105002150112700007F000021');
-		buf_data = computeBytesFromPXCT(buf);
+		buf_data = compute_bytes_from_PXCT(buf);
 		self.assertEqual(buf_data[0:5], buf[0:5]);
 		self.assertEqual(buf_data[-1], buf[-1]);
 		self.assertEqual(buf_data[6], 0x00);
@@ -20,7 +20,7 @@ class TestLocoNet(unittest.TestCase):
 		
 	def testComputePXCTFromBytes(self):
 		buf = bytearray.fromhex('ED0F010500210011270000FF008021');
-		buf_data = computePXCTFromBytes(buf);
+		buf_data = compute_PXCT_from_bytes(buf);
 		self.assertEqual(buf_data[0:5], buf[0:5]);
 		self.assertEqual(buf_data[-1], buf[-1]);
 		self.assertEqual(buf_data[6], 0x50);
@@ -28,7 +28,7 @@ class TestLocoNet(unittest.TestCase):
 		
 	def testParseLNCVmsg(self):
 		buf = bytearray.fromhex('ED0F0105002150112700007F000021');
-		pkt = parseLNCVmsg(buf)
+		pkt = parse_LNCV_message(buf)
 		self.assertNotEqual(pkt, None)
 		self.assertEqual(pkt['deviceClass'], 10001)
 		self.assertEqual(pkt['lncvValue'], 255)
