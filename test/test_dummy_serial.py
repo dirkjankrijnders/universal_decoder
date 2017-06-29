@@ -1,7 +1,8 @@
 import unittest
 from decconf.interfaces.dummy_serial import DummyDecoder
 from decconf.protocols.loconet import checksum_loconet_buffer, start_module_LNCV_programming, \
-    stop_module_LNCV_programming, make_LNCV_response, read_module_LNCV, write_module_LNCV, parse_LNCV_message
+    stop_module_LNCV_programming, make_LNCV_response, read_module_LNCV, write_module_LNCV, parse_LNCV_message, \
+    compute_PXCT_from_bytes
 from decconf.protocols.loconet import LocoNet as Ln
 
 
@@ -55,6 +56,20 @@ class TestDummySerial(unittest.TestCase):
         expected_reply = checksum_loconet_buffer(bytearray.fromhex("b46d7f00"))
         self.assertEqual(reply, expected_reply)
         self.assertEqual(decoder.CVs[1], 51)
+
+
+    def test_dummy_decoder_discover(self):
+        address = 50
+        decoder = DummyDecoder('')
+        decoder.CVs[1] = address
+
+        buf = make_LNCV_response(0xFFFF, 0, 0xFFFF, 0, opc=Ln.OPC_IMM_PACKET, src=Ln.LNCV_SRC_KPU,
+                                 req=Ln.LNCV_REQID_CFGREQUEST)
+        reply = decoder.checkMsg(buf)
+        expected_reply = checksum_loconet_buffer(
+            compute_PXCT_from_bytes(bytearray.fromhex("E50F0505001f00112700003200000D")))
+        self.assertEqual(reply, expected_reply)
+
 
 if __name__ == '__main__':
     unittest.main()
