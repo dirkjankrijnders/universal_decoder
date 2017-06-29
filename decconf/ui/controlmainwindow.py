@@ -20,7 +20,7 @@ from decconf.datamodel.CV import CVDelegate
 from dummy_serial import DummySerial
 
 from decconf.protocols.loconet import LocoNet as Ln
-from decconf.protocols.loconet import makeLNCVresponse, parse_LNCV_message, format_loconet_message, checksum_loconet_buffer
+from decconf.protocols.loconet import make_LNCV_response, parse_LNCV_message, format_loconet_message, checksum_loconet_buffer
 
 from decconf.interfaces.locobuffer import LocoBuffer
 
@@ -195,8 +195,8 @@ class ControlMainWindow(object):
 
     def detect_modules(self):
         if self.lb is not None:
-            buf = makeLNCVresponse(0xFFFF, 0, 0xFFFF, 0, opc=Ln.OPC_IMM_PACKET, src=Ln.LNCV_SRC_KPU,
-                                   req=Ln.LNCV_REQID_CFGREQUEST)
+            buf = make_LNCV_response(0xFFFF, 0, 0xFFFF, 0, opc=Ln.OPC_IMM_PACKET, src=Ln.LNCV_SRC_KPU,
+                                     req=Ln.LNCV_REQID_CFGREQUEST)
             self.lb.write(buf)
 
     def parse_loconet_packet(self, data):

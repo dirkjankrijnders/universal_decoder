@@ -172,8 +172,8 @@ def checksum_loconet_buffer(buf: bytearray) -> bytearray:
     """
     checksum = LN_CHECKSUM_SEED
     # noinspection PyTypeChecker
-    for newbyte in buf[:-1]:
-        checksum ^= newbyte
+    for new_byte in buf[:-1]:
+        checksum ^= new_byte
     buf[-1] = checksum
     return buf
 
@@ -261,32 +261,32 @@ def format_loconet_message(data: bytearray) -> str:
 class LNMessage(object):
     """docstring for LNMessage"""
 
-    def __init__(self, buf, expectReply=False):
+    def __init__(self, buf, expect_reply=False):
         super(LNMessage, self).__init__()
         self.msg = buf
-        self.expectReply = expectReply
+        self.expectReply = expect_reply
 
 
-def startModuleLNCVProgramming(deviceClass, address):
-    return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PRON, opc=LocoNet.OPC_IMM_PACKET,
-                            req=LocoNet.LNCV_REQID_CFGREQUEST)
+def start_module_LNCV_programming(device_class, address):
+    return make_LNCV_response(device_class, 0, address, LocoNet.LNCV_FLAG_PRON, opc=LocoNet.OPC_IMM_PACKET,
+                              req=LocoNet.LNCV_REQID_CFGREQUEST)
 
 
-def stopModuleLNCVProgramming(deviceClass, address):
-    return makeLNCVresponse(deviceClass, 0, address, LocoNet.LNCV_FLAG_PROFF, opc=LocoNet.OPC_IMM_PACKET,
-                            req=LocoNet.LNCV_REQID_CFGREQUEST)
+def stop_module_LNCV_programming(device_class, address):
+    return make_LNCV_response(device_class, 0, address, LocoNet.LNCV_FLAG_PROFF, opc=LocoNet.OPC_IMM_PACKET,
+                              req=LocoNet.LNCV_REQID_CFGREQUEST)
 
 
-def readModuleLNCV(deviceClass, cv):
-    return makeLNCVresponse(deviceClass, cv, 0, 0, opc=LocoNet.OPC_IMM_PACKET, req=LocoNet.LNCV_REQID_CFGREQUEST)
+def read_module_LNCV(device_class, cv):
+    return make_LNCV_response(device_class, cv, 0, 0, opc=LocoNet.OPC_IMM_PACKET, req=LocoNet.LNCV_REQID_CFGREQUEST)
 
 
-def writeModuleLNCV(deviceClass, cv, value):
-    return makeLNCVresponse(deviceClass, cv, value, 0, opc=LocoNet.OPC_IMM_PACKET, req=LocoNet.LNCV_REQID_CFGWRITE)
+def write_module_LNCV(device_class, cv, value):
+    return make_LNCV_response(device_class, cv, value, 0, opc=LocoNet.OPC_IMM_PACKET, req=LocoNet.LNCV_REQID_CFGWRITE)
 
 
-def makeLNCVresponse(first, second, third, last, opc=LocoNet.OPC_PEER_XFER, src=LocoNet.LNCV_SRC_KPU,
-                     req=LocoNet.LNCV_REQID_CFGREAD):
+def make_LNCV_response(first, second, third, last, opc=LocoNet.OPC_PEER_XFER, src=LocoNet.LNCV_SRC_KPU,
+                       req=LocoNet.LNCV_REQID_CFGREAD):
     pkt = list(range(12))
     pkt[0] = opc
     pkt[1] = 15
@@ -306,9 +306,9 @@ def makeLNCVresponse(first, second, third, last, opc=LocoNet.OPC_PEER_XFER, src=
     return buf
 
 
-class LNCVConfirmedMessage(LNMessage):
+class LNCV_confirmed_message(LNMessage):
     def __init__(self, msg, reply, mask, src, retry=1):
-        super(LNCVConfirmedMessage, self).__init__(msg, True)
+        super(LNCV_confirmed_message, self).__init__(msg, True)
 
         self.reply = reply
         self.mask = mask
@@ -338,7 +338,7 @@ class LNCVConfirmedMessage(LNMessage):
         return False
 
 
-class LNCVReadMessage(LNCVConfirmedMessage):
+class LNCVReadMessage(LNCV_confirmed_message):
     """docstring for LNCVReadMessage"""
 
     def __init__(self, msg, src):
@@ -355,7 +355,7 @@ class LNCVReadMessage(LNCVConfirmedMessage):
         super(LNCVReadMessage, self).__init__(msg, reply, mask, src)
 
 
-class LNCVWriteMessage(LNCVConfirmedMessage):
+class LNCVWriteMessage(LNCV_confirmed_message):
     """docstring for LNCVReadMessage"""
 
     def __init__(self, msg, src):

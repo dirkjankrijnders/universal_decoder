@@ -34,9 +34,9 @@ class TestLocoNet(unittest.TestCase):
 		self.assertEqual(pkt['lncvValue'], 255)
 	
 	def testMakeLNCVresponse(self):
-		buf = makeLNCVresponse(1,1,1,1);
+		buf = make_LNCV_response(1, 1, 1, 1);
 		self.assertEqual(buf[0], LocoNet.OPC_PEER_XFER)
-		buf = makeLNCVresponse(10001,1,255, 0, opc = LocoNet.OPC_IMM_PACKET, src = LocoNet.LNCV_SRC_KPU, req = LocoNet.LNCV_REQID_CFGREQUEST);
+		buf = make_LNCV_response(10001, 1, 255, 0, opc = LocoNet.OPC_IMM_PACKET, src = LocoNet.LNCV_SRC_KPU, req = LocoNet.LNCV_REQID_CFGREQUEST);
 		#print("Recv LN Msg: 0x", " ".join("{:02x}".format(b) for b in buf));
 		#print("Recv LN Msg: 0x", " ".join("{:02x}".format(b) for b in bytes.fromhex('ED0F0105002110112701007F000060')));
 		self.assertEqual(buf, bytes.fromhex('ED0F0105002110112701007F000060'))

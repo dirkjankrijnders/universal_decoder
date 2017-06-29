@@ -110,22 +110,22 @@ def main():
 
     lb = LocoBuffer(_serial, send_queue, recieve_queue)
 
-    # lb.add_to_queue(LNCVWriteMessage(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]), reader))
-    lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]))
-    # lb.add_to_queue(LNCVWriteMessage(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]), reader))
-    # lb.add_to_queue(LNCVWriteMessage(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]), reader))
+    # lb.add_to_queue(LNCVWriteMessage(start_module_LNCV_programming(args.moduleclass[0], args.address[0]), reader))
+    lb.write(start_module_LNCV_programming(args.moduleclass[0], args.address[0]))
+    # lb.add_to_queue(LNCVWriteMessage(start_module_LNCV_programming(args.moduleclass[0], args.address[0]), reader))
+    # lb.add_to_queue(LNCVWriteMessage(start_module_LNCV_programming(args.moduleclass[0], args.address[0]), reader))
     sleep(1)
-    lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]))
+    lb.write(start_module_LNCV_programming(args.moduleclass[0], args.address[0]))
     sleep(1)
-    lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]))
+    lb.write(start_module_LNCV_programming(args.moduleclass[0], args.address[0]))
     sleep(1)
-    lb.write(startModuleLNCVProgramming(args.moduleclass[0], args.address[0]))
+    lb.write(start_module_LNCV_programming(args.moduleclass[0], args.address[0]))
 
     try:
         if args.command[0] == 'read':
 
             for cv in range(1, n_cv):
-                lb.add_to_queue(LNCVReadMessage(readModuleLNCV(args.moduleclass[0], cv), writer))
+                lb.add_to_queue(LNCVReadMessage(read_module_LNCV(args.moduleclass[0], cv), writer))
             while writer.ncv > 0:
                 pass
 
@@ -136,7 +136,7 @@ def main():
                 if vals[1] == '':
                     vals[1] = 0
                 lb.add_to_queue(
-                    LNCVWriteMessage(writeModuleLNCV(args.moduleclass[0], int(vals[0]), int(vals[1])),
+                    LNCVWriteMessage(write_module_LNCV(args.moduleclass[0], int(vals[0]), int(vals[1])),
                                      reader))
                 ncv += 1
             while reader.ncv < ncv:
@@ -145,13 +145,13 @@ def main():
         if args.command[0] == 'stats':
             printer.ncv = 9
             for cv in range(1024, 1033):
-                lb.add_to_queue(LNCVReadMessage(readModuleLNCV(args.moduleclass[0], cv), printer))
+                lb.add_to_queue(LNCVReadMessage(read_module_LNCV(args.moduleclass[0], cv), printer))
             while printer.ncv > 0:
                 pass
     except KeyboardInterrupt:
         pass
 
-    # lb.add_to_queue(stopModuleLNCVProgramming(args.moduleclass[0], args.address[0]))
+    # lb.add_to_queue(stop_module_LNCV_programming(args.moduleclass[0], args.address[0]))
 
     sleep(1)
     if fid is not None:

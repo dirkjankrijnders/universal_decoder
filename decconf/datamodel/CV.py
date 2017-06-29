@@ -5,8 +5,8 @@ from Qt import QtCore, QtGui
 
 from yapsy.IPlugin import IPlugin
 
-from decconf.protocols.loconet import startModuleLNCVProgramming, stopModuleLNCVProgramming, readModuleLNCV, \
-    writeModuleLNCV, LNCVReadMessage, parse_LNCV_message, LNCVWriteMessage
+from decconf.protocols.loconet import start_module_LNCV_programming, stop_module_LNCV_programming, read_module_LNCV, \
+    write_module_LNCV, LNCVReadMessage, parse_LNCV_message, LNCVWriteMessage
 
 
 class CVDelegate(IPlugin):
@@ -63,13 +63,13 @@ class CVListModel(QtCore.QAbstractTableModel):
         if self.cs is None:
             return None
 
-        self.cs.write(startModuleLNCVProgramming(self._class, self._address))
+        self.cs.write(start_module_LNCV_programming(self._class, self._address))
 
     def close(self):
         if self.cs is None:
             return None
 
-        self.cs.write(stopModuleLNCVProgramming(self._class, self._address))
+        self.cs.write(stop_module_LNCV_programming(self._class, self._address))
         self.descriptionDelegate.close()
 
     def programmingAck(self, pkt):
@@ -144,11 +144,11 @@ class CVListModel(QtCore.QAbstractTableModel):
             self.setCV(pkt['lncvNumber'], pkt['lncvValue'])
 
     def readCV(self, cv):
-        self.cs.add_to_queue(LNCVReadMessage(readModuleLNCV(self._class, cv), self))
+        self.cs.add_to_queue(LNCVReadMessage(read_module_LNCV(self._class, cv), self))
 
     def writeCV(self, cv, value):
         if self.cs is not None and self.getCV(cv) != value:
-            self.cs.add_to_queue(LNCVWriteMessage(writeModuleLNCV(self._class, cv, value), self))
+            self.cs.add_to_queue(LNCVWriteMessage(write_module_LNCV(self._class, cv, value), self))
 
     def setCV(self, cv, value):
         self.CVs[cv] = value
