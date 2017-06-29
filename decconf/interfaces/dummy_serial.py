@@ -54,6 +54,12 @@ class DummyDecoder(object):
         else:
             self.logger.info('Created empty dummy decoder')
 
+        self.CVs[1018] = 19.75*16
+        self.CVs[1019] = 0x1f1f
+        self.CVs[1020] = 0x2f2f
+        self.CVs[1021] = 0x3f3f
+        self.CVs[1022] = 0x4f4f
+        self.CVs[1023] = '010301'
 
         self.logger.info('Created dummy decoder with address {}'.format(str(self.CVs[1])))
 
