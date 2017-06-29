@@ -1,5 +1,5 @@
 import unittest
-from dummy_serial import DummyDecoder
+from decconf.interfaces.dummy_serial import DummyDecoder
 from decconf.protocols.loconet import checksum_loconet_buffer, start_module_LNCV_programming, \
     stop_module_LNCV_programming, make_LNCV_response, read_module_LNCV, write_module_LNCV, parse_LNCV_message
 from decconf.protocols.loconet import LocoNet as Ln

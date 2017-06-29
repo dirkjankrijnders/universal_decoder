@@ -17,7 +17,7 @@ from decconf.datamodel.decoder import DecoderController, cvController
 from decconf.datamodel.CV import CVListModel
 from decconf.datamodel.CV import CVDelegate
 
-from dummy_serial import DummySerial
+from decconf.interfaces.dummy_serial import DummySerial
 
 from decconf.protocols.loconet import LocoNet as Ln
 from decconf.protocols.loconet import make_LNCV_response, parse_LNCV_message, format_loconet_message, checksum_loconet_buffer
