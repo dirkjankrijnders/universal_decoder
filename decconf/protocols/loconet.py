@@ -308,6 +308,22 @@ def make_LNCV_response(first, second, third, last, opc=LocoNet.OPC_PEER_XFER, sr
 
 class LNCV_confirmed_message(LNMessage):
     def __init__(self, msg, reply, mask, src, retry=1):
+        """
+        Make a LNCV message that notifies the an object when the reply comes
+
+        Arguments
+        ---------
+        msg: bytearray
+            valid LNCV message that expects as reply
+        reply: bytearray
+            the expected reply, the exact values are check with in the mask
+        mask: bytearray
+            mask for the reply, only the bits specified are compared, al others are "don't care"
+        src: object
+            Object of which the messageConfirmed method is called when the decoder replies
+        reply: int
+            Number of retries before giving up, defaults to 1
+        """
         super(LNCV_confirmed_message, self).__init__(msg, True)
 
         self.reply = reply
@@ -339,9 +355,17 @@ class LNCV_confirmed_message(LNMessage):
 
 
 class LNCVReadMessage(LNCV_confirmed_message):
-    """docstring for LNCVReadMessage"""
+    def __init__(self, msg: bytearray, src: object):
+        """
+        Make a LNCV read message
 
-    def __init__(self, msg, src):
+        Arguments
+        ---------
+        msg: bytearray
+            Message as created by read_module_LNCV
+        src: object
+            Object of which the messageConfirmed method is called when the decoder replies
+        """
         mask = bytearray(b'\0' * 15)
         reply = bytearray(msg)
         reply[0] = 0xe5
@@ -356,10 +380,17 @@ class LNCVReadMessage(LNCV_confirmed_message):
 
 
 class LNCVWriteMessage(LNCV_confirmed_message):
-    """docstring for LNCVReadMessage"""
-
     def __init__(self, msg, src):
-        # mask = bytearray(b'\0' * 4)
+        """
+        Make a LNCV write message
+
+        Arguments
+        ---------
+        msg: bytearray
+            Message as created by write_module_LNCV
+        src: object
+            Object of which the messageConfirmed method is called when the decoder replies
+        """
         mask = bytes.fromhex('ffff0000')
         reply = bytearray.fromhex('b46d7fff')
         reply[1] = msg[0] & 0x7f
