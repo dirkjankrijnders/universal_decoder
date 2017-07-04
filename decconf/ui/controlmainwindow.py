@@ -6,7 +6,7 @@ import queue
 
 from copy import deepcopy
 
-from Qt import QtCore, QtGui, QtWidgets, QtCompat, __qt_version__, __binding__, __binding_version__
+from Qt import QtCore, QtWidgets, QtCompat, __qt_version__, __binding__, __binding_version__
 import serial.tools.list_ports
 from appdirs import *
 
@@ -103,6 +103,7 @@ class ControlMainWindow(object):
 
         port_found = False
         for ii, port in enumerate(serial.tools.list_ports.comports()):
+
             self.ui.comboBox.addItem("{}".format(port[0]), userData=port)
 
         self.ui.comboBox.addItem("Dummy", userData='dummy')
@@ -183,9 +184,7 @@ class ControlMainWindow(object):
 
             from decconf.datamodel.CV import CVListModel
 
-            # infoDialog = QtGui.QDialog(self)
             info_ui = QtCompat.loadUi("decconf/ui/infodialog.ui")
-            # infoUi.setupUi(infoDialog);
             infofilter = QtCore.QSortFilterProxyModel()
             infofilter.setFilterRole(QtCore.Qt.UserRole)
             infofilter.setFilterRegExp("info")

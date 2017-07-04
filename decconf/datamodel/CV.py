@@ -23,7 +23,7 @@ class CVDelegate(IPlugin):
     def cvDescription(self, cv):
         return "CV {}".format(cv)
 
-    def controller(self, tabwidget):
+    def controller(self, decoder, tabwidget):
         return None
 
     def generalCVs(self):
@@ -170,7 +170,7 @@ class CVListModel(QtCore.QAbstractTableModel):
         return self.descriptionDelegate.hasGui()
 
     def controller(self, widget):
-        return self.descriptionDelegate.controller(widget)
+        return self.descriptionDelegate.controller(widget, self)
 
     def row2cv(self, row):
         return row
@@ -186,9 +186,9 @@ class CVListModel(QtCore.QAbstractTableModel):
         writer = csv.writer(fid)
         writer.writerows(towrite)
 
-
+"""
 class cvController(object):
-    """docstring for cvController"""
+
 
     def __init__(self, tableView):
         super(cvController, self).__init__()
@@ -204,8 +204,9 @@ def setDecoder(self, dec, widget):
     self.decoder = dec
     self.decoder.open()
     self.tableView.setModel(self.decoder)
-    self.decui = dec.controller(widget)
+    self.decui = dec.controller(dec, widget)
 
 
 def readCV(self, cv, value):
     self.decoder.setCV(cv, value)
+"""

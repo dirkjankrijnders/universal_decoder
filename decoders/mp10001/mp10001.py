@@ -17,9 +17,6 @@ class I10001(cv.CVDelegate):
     def __init__(self):
         super(I10001, self).__init__()
 
-    def close(self):
-        pass
-
     def print_name(self):
         print(self.name)
 
@@ -111,7 +108,13 @@ class I10001(cv.CVDelegate):
             return "{}.{}.{}".format(int(v[0:1]), int(v[2:3]), int(v[4:5]))
         return super(I10001, self).formatCV(cv)
 
-    def controller(self, tabwidget):
+    def controller(self, tabwidget, decoder):
         from decoders.mp10001.dec10001 import dec10001controller
-        self.uiController = dec10001controller(self, tabwidget)
+        print(decoder)
+        print(tabwidget)
+        self.uiController = dec10001controller(decoder, tabwidget)
         return self.uiController
+
+    def close(self):
+        if self.uiController:
+            self.uiController.close()
