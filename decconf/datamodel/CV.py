@@ -41,6 +41,7 @@ class CVDelegate(IPlugin):
 
 class CVListModel(QtCore.QAbstractTableModel):
     """Represents a list of CV's"""
+    dataChanged  = QtCore.Signal(QtCore.QModelIndex, QtCore.QModelIndex)
 
     def __init__(self, _class, _address, descriptionDelegate=None, cs=None):
         super(CVListModel, self).__init__()
