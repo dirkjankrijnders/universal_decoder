@@ -11,3 +11,6 @@ decconf.egg-info
 preferences.py
 .tox
 *.pyc
+cover
+.idea
+Qt
