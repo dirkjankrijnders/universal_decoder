@@ -109,10 +109,10 @@ class I10001(cv.CVDelegate):
         return super(I10001, self).formatCV(cv)
 
     def controller(self, tabwidget, decoder):
-        from decoders.mp10001.dec10001 import dec10001controller
+        from decoders.mp10001.dec10001 import Dec10001Controller
         print(decoder)
         print(tabwidget)
-        self.uiController = dec10001controller(decoder, tabwidget)
+        self.uiController = Dec10001Controller(decoder, tabwidget)
         return self.uiController
 
     def close(self):
