@@ -127,8 +127,9 @@ void reportSensor(uint16_t address, bool state) {
 
 void configureSlot(uint8_t slot) {
   uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin;
-
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin, secondary_address;
+  bool cumulative, force_on, report_inverse;
+  
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
     address = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.address));
@@ -145,11 +146,14 @@ void configureSlot(uint8_t slot) {
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
       case 1: // Input
-        confpins[slot] = new InputPin(slot, pin, address);
+        report_inverse = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.options)) & 0x01) == 0x01);
+        secondary_address  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.secadd));
+        confpins[slot] = new InputPin(slot, pin, address, report_inverse, secondary_address);
         break;
       case 3: // Output
-        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
-        confpins[slot] = new OutputPin(slot, pin, address, pin_config);
+        cumulative = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
+        force_on = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x02) == 0x02);
+        confpins[slot] = new OutputPin(slot, pin, address, cumulative, force_on);
         break;
       case 4: // Dual action
         pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
