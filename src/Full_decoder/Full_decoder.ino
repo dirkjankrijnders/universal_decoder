@@ -27,6 +27,7 @@ ConfiguredPin* confpins[MAX];
 uint8_t pins_conf = 0;
 
 /* TLC5947 Support*/
+#if TLC_SUPPORT
 #include "Adafruit_TLC5947.h"
 
 // How many boards do you have chained?
@@ -38,6 +39,7 @@ uint8_t pins_conf = 0;
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
 
 Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
+#endif // TLC_SUPPORT
 
 /* PCA9685 Support */
 
@@ -158,10 +160,12 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new DualAction(slot, pin, address, pos1, pos2, speed, pin_config);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
+#if TLC_SUPPORT
       case 101: // TLC5947 PWM LED Controller.
         pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
         confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, 1000);
         break;
+#endif // TLC_SUPPORT
       case 102: // PCA9686
         pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
         pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos2));
@@ -201,7 +205,9 @@ void setup() {
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
   }
+#if TLC_SUPPORT
   tlc.begin();
+#endif //TLC_SUPPORT
   
   if (!ds.search(addr)) {
     ds.reset_search();
