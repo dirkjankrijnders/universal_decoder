@@ -71,6 +71,8 @@ byte dsdata[9];
 
 #define LOCONET_TX_PIN 5
 
+#define POWER_VOLTAGE_PIN A2
+
 extern int __bss_start, __bss_end;
 
 int freeRam () {
@@ -103,6 +105,12 @@ uint16_t readTemperature() {
   //// default is 12 bit resolution, 750 ms conversion time
   return raw; // To be devided by 16;
 }
+
+uint16_t readPowerVoltage() {
+  uint16_t adcValue = analogRead(POWER_VOLTAGE_PIN);
+  return adcValue * 15.3117207;
+}
+
 void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG("Reporting slot ");
   DEBUG(slot);
@@ -235,6 +243,11 @@ void setup() {
   pca.begin();
   pca.setPWMFreq(70);
 
+#ifdef POWER_VOLTAGE_PIN
+  pinMode(POWER_VOLTAGE_PIN, INPUT);
+  Serial.print("Power voltage in mV: ");
+  Serial.println(readPowerVoltage());
+#endif
 }
 
 void loop() {
@@ -396,6 +409,9 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
           lncvValue = stats->Collisions;
         }
         return LNCV_LACK_OK;
+      } else if (lncvAddress == 1034) {
+          lncvValue = readPowerVoltage();
+          return LNCV_LACK_OK;
       } else {
         // Invalid LNCV address, request a NAXK
         return LNCV_LACK_ERROR_UNSUPPORTED;
