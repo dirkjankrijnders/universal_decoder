@@ -5,7 +5,7 @@ import queue
 from time import sleep
 
 from decconf.interfaces.locobuffer import LocoBuffer
-from dummy_serial import DummySerial
+from decconf.interfaces.dummy_serial import DummySerial
 import serial.tools.list_ports
 
 from decconf.protocols.loconet import *
