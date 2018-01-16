@@ -6,4 +6,6 @@ nosexcover
 coverage
 httpretty
 coveralls
-
+Qt.py
+pyqt5
+pyserial
