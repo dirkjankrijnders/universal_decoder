@@ -13,7 +13,7 @@ from appdirs import *
 from yapsy.PluginManager import PluginManager
 
 from decconf.ui.prefdialog import PreferenceDialog
-from decconf.datamodel.decoder import DecoderController, cvController
+from decconf.datamodel.decoder import DecoderController, CVController
 from decconf.datamodel.CV import CVListModel
 from decconf.datamodel.CV import CVDelegate
 
@@ -87,10 +87,10 @@ class ControlMainWindow(object):
 
         self.ui.show()
         self.setup_menu()
-        self.ui.connectserial.setText("Connect")
+        self.ui.connect_serial.setText("Connect")
         self.ui.powerControl.setCheckable(True)
         self.ui.toolBar.addWidget(self.ui.comboBox)
-        self.ui.toolBar.addWidget(self.ui.connectserial)
+        self.ui.toolBar.addWidget(self.ui.connect_serial)
         empty = QtWidgets.QWidget()
         empty.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         self.ui.toolBar.addWidget(empty)
@@ -113,30 +113,30 @@ class ControlMainWindow(object):
             self.ui.comboBox.setCurrentIndex(port_index)
             port_found = True
 
-        self.ui.connectserial.clicked.connect(self.connectserial)
+        self.ui.connect_serial.clicked.connect(self.connect_serial)
         self.ui.powerControl.clicked.connect(self.powercontrol)
         self.ui.infoButton.clicked.connect(self.infodialog)
         self.ui.DetectButton.clicked.connect(self.detect_modules)
 
-        self.cvController = cvController(self.ui.cvTable)
+        self.cvController = CVController(self.ui.cvTable)
         self.decodercont = DecoderController(self.ui.treeWidget, self.cvController, self.ui.tabWidget)
 
         if port_found and self.config.getboolean('general', 'autoconnect'):
-            self.connectserial()
+            self.connect_serial()
 
         if self.connected and self.config.getboolean('general', 'autodetect'):
             self.detect_modules()
 
-    def connectserial(self):
+    def connect_serial(self):
         # self.decodercont.addDecoder(Decoder(10001, 126, self.lb));
         # self.recvQueue.put(bytes.fromhex('ED0F0105002150112700007F000021'));
-        if self.ui.connectserial.text() == "Connect":
+        if self.ui.connect_serial.text() == "Connect":
             port = self.ui.comboBox.currentText()
             print("Connecting!", port)
             # self.logger.info("Connecting!", port)
             if port == 'Dummy':
                 self.serial = DummySerial()
-                self.ui.connectserial.setText("Disconnect")
+                self.ui.connect_serial.setText("Disconnect")
                 self.lb = LocoBuffer(self.serial, self.sendQueue, self.recvQueue)
                 self.connected = True
                 return
@@ -148,14 +148,14 @@ class ControlMainWindow(object):
                 self.logger.warning("Failed to open serial port: ", e)
                 return
 
-            self.ui.connectserial.setText("Disconnect")
+            self.ui.connect_serial.setText("Disconnect")
             self.lb = LocoBuffer(self.serial, self.sendQueue, self.recvQueue)
             self.connected = True
         else:
             self.lb = None
             self.connected = False
             self.serial.close()
-            self.ui.connectserial.setText("Connect")
+            self.ui.connect_serial.setText("Connect")
 
     def powercontrol(self):
         if self.lb is not None:
@@ -166,21 +166,21 @@ class ControlMainWindow(object):
 
     def infodialog(self):
         if self.lb is not None:
-            dec = self.decodercont.selectedDecoder()
+            dec = self.decodercont.selected_decoder()
             if dec is None:
                 return
-            dec.readCV(1018)  # Temperature
-            dec.readCV(1019)  # UID bytes 0-1
-            dec.readCV(1020)  # UID bytes 2-3
-            dec.readCV(1021)  # UID bytes 4-5
-            dec.readCV(1022)  # UID bytes 6-7
-            dec.readCV(1023)  # Version
-            dec.readCV(1024)  # FreeRAM
-            dec.readCV(1028)  # RxPackets
-            dec.readCV(1029)  # RxErrors
-            dec.readCV(1030)  # TxPackets
-            dec.readCV(1031)  # TxErrors
-            dec.readCV(1032)  # Collisions
+            dec.read_cv(1018)  # Temperature
+            dec.read_cv(1019)  # UID bytes 0-1
+            dec.read_cv(1020)  # UID bytes 2-3
+            dec.read_cv(1021)  # UID bytes 4-5
+            dec.read_cv(1022)  # UID bytes 6-7
+            dec.read_cv(1023)  # Version
+            dec.read_cv(1024)  # FreeRAM
+            dec.read_cv(1028)  # RxPackets
+            dec.read_cv(1029)  # RxErrors
+            dec.read_cv(1030)  # TxPackets
+            dec.read_cv(1031)  # TxErrors
+            dec.read_cv(1032)  # Collisions
 
             from decconf.datamodel.CV import CVListModel
 
@@ -212,13 +212,13 @@ class ControlMainWindow(object):
                             dd = copy.copy(self.classDelegateMapping[str(pkt['deviceClass'])])
                         else:
                             dd = CVDelegate()
-                        self.decodercont.addDecoder(
-                            CVListModel(pkt['deviceClass'], pkt['lncvValue'], cs=self.lb, descriptionDelegate=dd))
+                        self.decodercont.add_decoder(
+                            CVListModel(pkt['deviceClass'], pkt['lncvValue'], cs=self.lb, description_delegate=dd))
                     else:
                         self.logger.debug("ACK on Programming")
-                        self.decodercont.selectedDecoder().programmingAck(pkt)
+                        self.decodercont.selected_decoder().programming_ack(pkt)
                 else:
-                    self.decodercont.selectedDecoder().setCV(pkt['lncvNumber'], pkt['lncvValue'])
+                    self.decodercont.selected_decoder().set_cv(pkt['lncvNumber'], pkt['lncvValue'])
             print("Found device class: {} module address: {}".format(pkt['deviceClass'], pkt['lncvValue']))
 
     def recieve_loconet_packet(self, data):
@@ -239,11 +239,11 @@ class ControlMainWindow(object):
         if filename:
             print("File to export to: {}".format(filename))
             with open(filename[0], 'wt') as fid:
-                self.decodercont.selectedDecoder().writeCSV(fid)
+                self.decodercont.selected_decoder().write_CSV(fid)
 
     def _quit(self):
         try:
-            self.decodercont.selectedDecoder().close()
+            self.decodercont.selected_decoder().close()
         except Exception as e:
             pass
 

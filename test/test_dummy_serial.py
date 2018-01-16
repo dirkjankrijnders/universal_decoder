@@ -17,19 +17,19 @@ class TestDummySerial(unittest.TestCase):
 
         buf = checksum_loconet_buffer(start_module_LNCV_programming(10001, address))
         expected_response = make_LNCV_response(10001, 0, address, 0x80, src=Ln.LNCV_SRC_MODULE)
-        self.assertEqual(decoder.checkMsg(buf), expected_response)
+        self.assertEqual(decoder.check_msg(buf), expected_response)
         self.assertEqual(decoder.programmingMode, True)
 
         buf = checksum_loconet_buffer(start_module_LNCV_programming(10001, address - 1))
-        self.assertIsNone(decoder.checkMsg(buf))
+        self.assertIsNone(decoder.check_msg(buf))
         self.assertEqual(decoder.programmingMode, True)
 
         buf = checksum_loconet_buffer(stop_module_LNCV_programming(10001, address - 1))
-        self.assertIsNone(decoder.checkMsg(buf))
+        self.assertIsNone(decoder.check_msg(buf))
         self.assertEqual(decoder.programmingMode, True)
 
         buf = checksum_loconet_buffer(stop_module_LNCV_programming(10001, address))
-        self.assertIsNone(decoder.checkMsg(buf))
+        self.assertIsNone(decoder.check_msg(buf))
         self.assertEqual(decoder.programmingMode, False)
 
     def test_dummy_decoder_read_write(self):
@@ -41,18 +41,18 @@ class TestDummySerial(unittest.TestCase):
         self.assertEqual(decoder.CVs[1], address)
 
         buf = checksum_loconet_buffer(start_module_LNCV_programming(10001, address))
-        decoder.checkMsg(buf)
+        decoder.check_msg(buf)
         self.assertEqual(decoder.programmingMode, True)
 
         buf = checksum_loconet_buffer(read_module_LNCV(10001, 1))
-        reply = decoder.checkMsg(buf)
+        reply = decoder.check_msg(buf)
         expected_reply = make_LNCV_response(10001, 1, 50, 0x00, src=Ln.LNCV_SRC_MODULE)
         self.assertEqual(reply, expected_reply)
         msg = parse_LNCV_message(reply)
         self.assertEqual(msg['lncvValue'], 50)
 
         buf = checksum_loconet_buffer(write_module_LNCV(10001, 1, 51))
-        reply = decoder.checkMsg(buf)
+        reply = decoder.check_msg(buf)
         expected_reply = checksum_loconet_buffer(bytearray.fromhex("b46d7f00"))
         self.assertEqual(reply, expected_reply)
         self.assertEqual(decoder.CVs[1], 51)
@@ -65,7 +65,7 @@ class TestDummySerial(unittest.TestCase):
 
         buf = make_LNCV_response(0xFFFF, 0, 0xFFFF, 0, opc=Ln.OPC_IMM_PACKET, src=Ln.LNCV_SRC_KPU,
                                  req=Ln.LNCV_REQID_CFGREQUEST)
-        reply = decoder.checkMsg(buf)
+        reply = decoder.check_msg(buf)
         expected_reply = checksum_loconet_buffer(
             compute_PXCT_from_bytes(bytearray.fromhex("E50F0505001f00112700003200000D")))
         self.assertEqual(reply, expected_reply)

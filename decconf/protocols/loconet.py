@@ -348,7 +348,7 @@ class LNCV_confirmed_message(LNMessage):
         if int.from_bytes(reply, 'big') & int.from_bytes(self.mask, 'big') == int.from_bytes(self.reply,
                                                                                              'big') & int.from_bytes(
                 self.mask, 'big'):
-            self.src.messageConfirmed(self, reply)
+            self.src.message_confirmed(self, reply)
             return True
 
         return False

@@ -161,30 +161,30 @@ class PinConfigWidget(QtWidgets.QWidget):
             value = 3  # output/LED
         elif index == 2:
             value = 1  # input
-        self.decoder.writeCV(cv, value)
+        self.decoder.write_cv(cv, value)
 
     def arduinopinChanged(self, value):
         self.ui.ArduinoPinSpinBox1.setValue(value)
         self.ui.ArduinoPinSpinBox2.setValue(value)
-        self.decoder.writeCV(self.slot_parameter_to_cv(0), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(0), value)
 
     def lnaddressChanged(self, value):
-        self.decoder.writeCV(self.slot_parameter_to_cv(1), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(1), value)
 
     def pos1Changed(self, value):
-        self.decoder.writeCV(self.slot_parameter_to_cv(2), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(2), value)
 
     def pos2Changed(self, value):
-        self.decoder.writeCV(self.slot_parameter_to_cv(3), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(3), value)
 
     def speedChanged(self, value):
-        self.decoder.writeCV(self.slot_parameter_to_cv(4), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(4), value)
 
     def feedback_1_changed(self, value):
-        self.decoder.writeCV(self.slot_parameter_to_cv(7), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(7), value)
 
     def feedback_2_changed(self, value):
-        self.decoder.writeCV(self.slot_parameter_to_cv(8), value)
+        self.decoder.write_cv(self.slot_parameter_to_cv(8), value)
 
 class Dec10001Controller(object):
     """docstring for dec10001controller"""
@@ -203,7 +203,7 @@ class Dec10001Controller(object):
         self.tabs.append(self.tabwidget.addTab(self.ui, "Dec 10001"))
         self.pin_widgets = []
 
-        address = self.decoder.getCV(1)
+        address = self.decoder.get_cv(1)
         if address is None:
             address = 1
 
@@ -214,7 +214,7 @@ class Dec10001Controller(object):
             pass
         self.ui.addressSpinBox.valueChanged.connect(self.addressChanged)
 
-        confpins = self.decoder.getCV(6)
+        confpins = self.decoder.get_cv(6)
         if confpins is None:
             confpins = 0
 
@@ -245,7 +245,7 @@ class Dec10001Controller(object):
 
     def addressChanged(self, value):
         """docstring for addressChanged"""
-        self.decoder.writeCV(1, value)
+        self.decoder.write_cv(1, value)
 
     @classmethod
     def generalCVs(cls):
@@ -253,7 +253,7 @@ class Dec10001Controller(object):
 
     def confpinsChanged(self, value):
         """docstring for confpinsChanged"""
-        self.decoder.writeCV(6, value)
+        self.decoder.write_cv(6, value)
         while len(self.tabs) < value + 1:
             self.pin_widgets.append(PinConfigWidget(len(self.tabs) - 1, self.decoder))
             self.tabs.append(self.tabwidget.addTab(self.pin_widgets[-1].ui, "Slot {}".format(len(self.tabs) - 1)))

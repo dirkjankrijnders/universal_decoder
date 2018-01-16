@@ -10,14 +10,14 @@ class I10003(cv.CVDelegate):
 	def print_name(self):
 		print("This is plugin 1");
 	
-	def generalCVs(self):
+	def general_cvs(self):
 		return [1,5,6,7,8,9];
 	
-	def cvDescription(self, cv):
+	def cv_description(self, cv):
 		desc = ['', 'Address', '', '', '','Max Modules supported',"No configured modules", "Manufacturer", "Version", "Speed"];
 		if cv < len(desc):
 			return desc[cv];
-		return super(I10003, self).cvDescription(cv);
+		return super(I10003, self).cv_description(cv);
 	
-	def setCV(self, cv, value):
+	def set_cv(self, cv, value):
 		pass

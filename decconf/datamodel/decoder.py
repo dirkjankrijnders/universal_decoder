@@ -1,18 +1,23 @@
-from Qt import QtCore, QtGui, QtWidgets
+from logging import getLogger
+
+from Qt import QtCore
+from Qt.QtWidgets import QTreeWidget, QTreeWidgetItem, QTabWidget, QTableView
 
 from decconf.datamodel.CV import CVListModel
 
 
-class cvController(object):
-    """docstring for cvController"""
+class CVController(object):
+    """
+    Controller for the module detailed view
+    """
 
-    def __init__(self, tableView):
-        super(cvController, self).__init__()
-        self.tableView = tableView
+    def __init__(self, table_view: QTableView):
+        super(CVController, self).__init__()
+        self.tableView = table_view
         self.decoder = None
-        self.decui = None
+        self.decoder_ui = None
 
-    def setDecoder(self, dec, widget):
+    def set_decoder(self, dec, widget):
         if not isinstance(dec, CVListModel):
             return
 
@@ -22,50 +27,49 @@ class cvController(object):
         self.decoder = dec
         self.decoder.open()
         self.tableView.setModel(self.decoder)
-        self.decoder.hasGui()
-        self.decui = dec.controller(widget)
+        self.decoder.has_gui()
+        self.decoder_ui = dec.controller(widget)
 
-    def readCV(self, cv, value):
-        self.decoder.setCV(cv, value)
+    def read_cv(self, cv, value):
+        self.decoder.set_cv(cv, value)
 
 
 class DecoderController(object):
-    """	"""
+    """
+    Controller for the treewidget list all detected modules
+    """
     desc = {"10001": "Accesory decoder", "11001": "Lokschuppen specialty", "10002": "Loconet Monitor",
             "10003": "Loconet S88 bridge", "5001": "Arduino LNCV example"}
 
-    def __init__(self, widget, cvController, tabwidget):
+    def __init__(self, widget: QTreeWidget, cv_controller: CVController, tab_widget: QTabWidget):
         """docstring for __init__"""
         super(DecoderController, self).__init__()
 
         self.widget = widget
         self._classes = dict()
         self.decoders = list()
-        self.cvController = cvController
-        self.tabwidget = tabwidget
-        # self.plugins = plugins
+        self.cvController = cv_controller
+        self.tab_widget = tab_widget
+        self.logger = getLogger()
 
         self.widget.setColumnCount(2)
         self.widget.setHeaderLabels(['Art Nr', 'Description'])
 
         for cl in DecoderController.desc.keys():
             self._classes[str(cl)] = (
-                QtWidgets.QTreeWidgetItem(self.widget, [str(cl), DecoderController.desc[str(cl)]]), [])
+                QTreeWidgetItem(self.widget, [str(cl), DecoderController.desc[str(cl)]]), [])
 
         self.widget.itemSelectionChanged.connect(self.select)
 
-    def addDecoder(self, dec):
-        # dec.parent = self.cvController
-        self._classes[str(dec._class)][1].append(dec._address)
-        treeitem = QtWidgets.QTreeWidgetItem(self._classes[str(dec._class)][0], [str(dec._address), "bla"])
-        treeitem.setData(0, QtCore.Qt.UserRole, dec)
-        print(self._classes[str(dec._class)][0])
+    def add_decoder(self, dec: CVListModel):
+        self._classes[str(dec.module_class)][1].append(dec.address)
+        tree_item = QTreeWidgetItem(self._classes[str(dec.module_class)][0], [str(dec.address), "bla"])
+        tree_item.setData(0, QtCore.Qt.UserRole, dec)
+        self.logger.debug(self._classes[str(dec.module_class)][0])
         self.decoders.append(dec)
 
-    def selectedDecoder(self):
+    def selected_decoder(self):
         return self.widget.selectedItems()[0].data(0, QtCore.Qt.UserRole)
 
-    # return self.decoders[self.widget.selectedItems()[0]]
-
     def select(self):
-        self.cvController.setDecoder(self.widget.selectedItems()[0].data(0, QtCore.Qt.UserRole), self.tabwidget)
+        self.cvController.set_decoder(self.widget.selectedItems()[0].data(0, QtCore.Qt.UserRole), self.tab_widget)

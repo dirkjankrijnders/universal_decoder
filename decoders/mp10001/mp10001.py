@@ -20,10 +20,10 @@ class I10001(cv.CVDelegate):
     def print_name(self):
         print(self.name)
 
-    def generalCVs(self):
+    def general_cvs(self):
         return [1, 2, 3, 4, 5, 6, 7, 8]
 
-    def cvDescription(self, cv):
+    def cv_description(self, cv):
         desc = ['', 'Address', 'bla', '', '', '', "No configured pins", "Manufacturer", "Version"]
         if cv < len(desc):
             return desc[cv]
@@ -55,41 +55,41 @@ class I10001(cv.CVDelegate):
                               "Res. 6", "Res. 7"]
 
             return "Slot {}, {}".format(slot, slotcvdesc[slotcv])
-        return super(I10001, self).cvDescription(cv)
+        return super(I10001, self).cv_description(cv)
 
-    def setCV(self, cv, value):
+    def set_cv(self, cv, value):
         if cv == 6:
             self.nConfiguredPins = value
             for cv2 in range(9, 9 + value):
-                self.parent.readCV(cv2)
+                self.parent.read_cv(cv2)
         if 8 < cv < 9 + self.nConfiguredPins:
             slot = cv - 9
             print("Slot: ", str(slot))
             if value == 1:  # Input pin
                 for cv2 in [0, 1, 2, 3]:
-                    self.parent.readCV(slot * 10 + 32 + cv2)
+                    self.parent.read_cv(slot * 10 + 32 + cv2)
             if value == 2:  # Servo pin
                 for cv2 in [0, 1, 2, 3, 4, 7, 8, 9]:
-                    self.parent.readCV(slot * 10 + 32 + cv2)
+                    self.parent.read_cv(slot * 10 + 32 + cv2)
             if value == 3:  # Output pin
                 for cv2 in [0, 1, 2]:
-                    self.parent.readCV(slot * 10 + 32 + cv2)
+                    self.parent.read_cv(slot * 10 + 32 + cv2)
             if value == 4:  # Dual action pin
                 for cv2 in [0, 1, 2, 3, 4, 5, 6]:
-                    self.parent.readCV(slot * 10 + 32 + cv2)
+                    self.parent.read_cv(slot * 10 + 32 + cv2)
             if value == 101:  # Output pin
                 for cv2 in [0, 1, 2]:
-                    self.parent.readCV(slot * 10 + 32 + cv2)
+                    self.parent.read_cv(slot * 10 + 32 + cv2)
             if value == 102:  # PCA Servo pin
                 for cv2 in [0, 1, 2, 3, 4, 7, 8, 9]:
-                    self.parent.readCV(slot * 10 + 32 + cv2)
+                    self.parent.read_cv(slot * 10 + 32 + cv2)
         if self.uiController:
             self.uiController.cvChange(cv, value)
 
     def getCV(self, cv):
-        self.parent.getCV(cv)
+        self.parent.get_cv(cv)
 
-    def formatCV(self, cv):
+    def format_cv(self, cv):
         if not self.parent.CVs[cv]:
             return ''
         if cv == 1018:
@@ -106,7 +106,7 @@ class I10001(cv.CVDelegate):
         if cv == 1023:
             v = str(self.parent.CVs[cv])
             return "{}.{}.{}".format(int(v[0:1]), int(v[2:3]), int(v[4:5]))
-        return super(I10001, self).formatCV(cv)
+        return super(I10001, self).format_cv(cv)
 
     def controller(self, tabwidget, decoder):
         from decoders.mp10001.dec10001 import Dec10001Controller

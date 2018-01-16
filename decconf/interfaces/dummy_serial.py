@@ -31,7 +31,7 @@ class DummySerial(object):
     def write(self, buf):
         self.stream.put(bytes(buf))
         for c in self.clients:
-            resp = c.checkMsg(buf)
+            resp = c.check_msg(buf)
             if resp is not None:
                 self.logger.debug('DS Sending: {}'.format(" ".join("{:02x}".format(b) for b in resp)))
                 for b in resp:
@@ -63,14 +63,13 @@ class DummyDecoder(object):
 
         self.logger.info('Created dummy decoder with address {}'.format(str(self.CVs[1])))
 
-    def checkMsg(self, buf):
+    def check_msg(self, buf):
         resp = None
         self.logger.debug('Checking message against dummy decoder with address {}'.format(str(self.CVs[1])))
-        # print(buf)
         if buf == make_LNCV_response(0xFFFF, 0, 0xFFFF, 0, opc=LN.OPC_IMM_PACKET, src=LN.LNCV_SRC_KPU,
                                      req=LN.LNCV_REQID_CFGREQUEST):
             resp = make_LNCV_response(10001, 0, self.CVs[1], 0x00,
-                                      src=LN.LNCV_SRC_MODULE)  # bytes.fromhex("E50F05494B1F037F7F00007F000071")
+                                      src=LN.LNCV_SRC_MODULE)
             return resp
 
         elif buf == checksum_loconet_buffer(start_module_LNCV_programming(10001, self.CVs[1])):
@@ -98,7 +97,6 @@ class DummyDecoder(object):
                 cv = lncv_msg['lncvNumber']
                 self.logger.info("Reading CV {}".format(cv))
                 resp = make_LNCV_response(10001, cv, self.CVs[cv], 0x00, src=LN.LNCV_SRC_MODULE)
-
 
         if lncv_msg is not None:
             if lncv_msg['ReqId'] == LN.LNCV_REQID_CFGWRITE:
