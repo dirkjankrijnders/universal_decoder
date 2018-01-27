@@ -38,8 +38,8 @@ class DecoderController(object):
     """
     Controller for the treewidget list all detected modules
     """
-    desc = {"10001": "Accesory decoder", "11001": "Lokschuppen specialty", "10002": "Loconet Monitor",
-            "10003": "Loconet S88 bridge", "5001": "Arduino LNCV example"}
+    desc = {"10001": "Accessory decoder", "11001": "Lokschuppen specialty", "10002": "Loconet Monitor",
+            "10003": "Loconet S88 bridge", "10004": "Train lift",  "5001": "Arduino LNCV example"}
 
     def __init__(self, widget: QTreeWidget, cv_controller: CVController, tab_widget: QTabWidget):
         """docstring for __init__"""
