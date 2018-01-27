@@ -87,10 +87,10 @@ class ControlMainWindow(object):
 
         self.ui.show()
         self.setup_menu()
-        self.ui.connect_serial.setText("Connect")
+        self.ui.connectserial.setText("Connect")
         self.ui.powerControl.setCheckable(True)
         self.ui.toolBar.addWidget(self.ui.comboBox)
-        self.ui.toolBar.addWidget(self.ui.connect_serial)
+        self.ui.toolBar.addWidget(self.ui.connectserial)
         empty = QtWidgets.QWidget()
         empty.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         self.ui.toolBar.addWidget(empty)
@@ -113,9 +113,9 @@ class ControlMainWindow(object):
             self.ui.comboBox.setCurrentIndex(port_index)
             port_found = True
 
-        self.ui.connect_serial.clicked.connect(self.connect_serial)
-        self.ui.powerControl.clicked.connect(self.powercontrol)
-        self.ui.infoButton.clicked.connect(self.infodialog)
+        self.ui.connectserial.clicked.connect(self.connect_serial)
+        self.ui.powerControl.clicked.connect(self.power_control)
+        self.ui.infoButton.clicked.connect(self.info_dialog)
         self.ui.DetectButton.clicked.connect(self.detect_modules)
 
         self.cvController = CVController(self.ui.cvTable)
@@ -130,13 +130,13 @@ class ControlMainWindow(object):
     def connect_serial(self):
         # self.decodercont.addDecoder(Decoder(10001, 126, self.lb));
         # self.recvQueue.put(bytes.fromhex('ED0F0105002150112700007F000021'));
-        if self.ui.connect_serial.text() == "Connect":
+        if self.ui.connectserial.text() == "Connect":
             port = self.ui.comboBox.currentText()
-            print("Connecting!", port)
+            self.logger.info("Connecting!: %s", port)
             # self.logger.info("Connecting!", port)
             if port == 'Dummy':
                 self.serial = DummySerial()
-                self.ui.connect_serial.setText("Disconnect")
+                self.ui.connectserial.setText("Disconnect")
                 self.lb = LocoBuffer(self.serial, self.sendQueue, self.recvQueue)
                 self.connected = True
                 return
@@ -148,23 +148,23 @@ class ControlMainWindow(object):
                 self.logger.warning("Failed to open serial port: ", e)
                 return
 
-            self.ui.connect_serial.setText("Disconnect")
+            self.ui.connectserial.setText("Disconnect")
             self.lb = LocoBuffer(self.serial, self.sendQueue, self.recvQueue)
             self.connected = True
         else:
             self.lb = None
             self.connected = False
             self.serial.close()
-            self.ui.connect_serial.setText("Connect")
+            self.ui.connectserial.setText("Connect")
 
-    def powercontrol(self):
+    def power_control(self):
         if self.lb is not None:
             if self.ui.powerControl.isChecked():
                 self.lb.write(checksum_loconet_buffer([Ln.OPC_GPON, 0x00]))
             else:
                 self.lb.write(checksum_loconet_buffer([Ln.OPC_GPOFF, 0x00]))
 
-    def infodialog(self):
+    def info_dialog(self):
         if self.lb is not None:
             dec = self.decodercont.selected_decoder()
             if dec is None:
@@ -277,7 +277,7 @@ class ControlMainWindow(object):
         _helpMenu.addAction(_prefAction)
         _helpMenu.addAction(_quitAction)
 
-        print("Added menu")
+        self.logger.debug("Added menu")
 
     def init_module_delegates(self):
         self.manager.setPluginPlaces(['decoders'])
