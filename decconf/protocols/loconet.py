@@ -255,6 +255,8 @@ def format_loconet_message(data: bytearray) -> str:
         info = "Power on"
     elif data[0] == LocoNet.OPC_SW_REQ:
         info = "Switch request"
+    elif data[0] == LocoNet.OPC_INPUT_REP:
+        info = "Feedback"
     return " ".join("{:02x}".format(b) for b in data).upper(), info
 
 
