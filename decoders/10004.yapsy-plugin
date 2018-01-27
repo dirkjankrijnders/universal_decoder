@@ -1,12 +1,12 @@
 [Core]
-Name = Universal LN Module
-Module = mp10001/mp10001.py
+Name = Trainlift LN Module
+Module = mp10004/mp10004.py
 
 [Decoder]
-Class = 10001
+Class = 10004
 
 [Documentation]
 Author = Dirkjan Krijnders
 Version = 0.1
-Description = Universal LocoNet module
+Description = Trainlift module
 Website = http://github.com

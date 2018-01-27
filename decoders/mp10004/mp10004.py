@@ -8,23 +8,23 @@ def cv2slot(cv):
     return slot, int((cv - 32) - (slot * 10))
 
 
-class I10001(cv.CVDelegate):
-    name = "Universal LN Module"
-    description = "Universal LocoNet module"
+class I10004(cv.CVDelegate):
+    name = "Trainlift LN Module"
+    description = "Trainlift LocoNet module"
     nConfiguredPins = 0
     uiController = None
 
     def __init__(self):
-        super(I10001, self).__init__()
+        super(I10004, self).__init__()
 
     def print_name(self):
         print(self.name)
 
     def general_cvs(self):
-        return [1, 2, 3, 4, 5, 6, 7, 8]
+        return [1, 2, 3, 4, 5, 6, 7, 8, 32, 34, 35, 36]
 
     def cv_description(self, cv):
-        desc = ['', 'Address', 'bla', '', '', '', "No configured pins", "Manufacturer", "Version"]
+        desc = ['', 'Address', '', '', '', '', "# levels", "Manufacturer", "Version"]
         if cv < len(desc):
             return desc[cv]
         elif cv in range(9, 31):
@@ -34,55 +34,22 @@ class I10001(cv.CVDelegate):
             if cv in desc_map:
                 return desc_map[cv]
         elif cv > 31:
-            slot, slotcv = cv2slot(cv)
-            if self.parent.CVs[9 + slot] == 1:
-                slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Secondary address", "Res. 2", "Res. 3", "Res. 4",
-                              "Res. 5", "Res. 6", "Res. 7"]
-            elif self.parent.CVs[9 + slot] == 2:
-                slotcvdesc = ["Ard. pin", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1",
-                              "FB slot 2", "Power slot"]
-            elif self.parent.CVs[9 + slot] == 3:
-                slotcvdesc = ["Ard. pin", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5",
-                              "Res. 6", "Res. 7"]
-            elif self.parent.CVs[9 + slot] == 101:
-                slotcvdesc = ["LTC. channel", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5",
-                              "Res. 6", "Res. 7"]
-            elif self.parent.CVs[9 + slot] == 102:
-                slotcvdesc = ["PCA. channel", "LN Add.", "Pos 1", "Pos 2", "Speed", "Res. 1", "Res. 2", "FB slot 1",
-                              "FB slot 2", "Power slot"]
+            slot, slot_cv = cv2slot(cv)
+            if slot == 0:
+                slot_cv_desc = ["", "", "feed speed", "top x", "bottom x", "options", "state", "", "", ""]
             else:
-                slotcvdesc = ["Unconfigured", "LN Add.", "Options", "Res. 1", "Res. 2", "Res. 3", "Res. 4", "Res. 5",
-                              "Res. 6", "Res. 7"]
+                slot_cv_desc = ["", "", "mm", "um", "options", "feedback address", "reserved", "", "", ""]
 
-            return "Slot {}, {}".format(slot, slotcvdesc[slotcv])
-        return super(I10001, self).cv_description(cv)
+            return "Slot {}, {}".format(slot, slot_cv_desc[slot_cv])
+        return super(I10004, self).cv_description(cv)
 
     def set_cv(self, cv, value):
         if cv == 6:
             self.nConfiguredPins = value
-            for cv2 in range(9, 9 + value):
-                self.parent.read_cv(cv2)
-        if 8 < cv < 9 + self.nConfiguredPins:
-            slot = cv - 9
-            print("Slot: ", str(slot))
-            if value == 1:  # Input pin
-                for cv2 in [0, 1, 2, 3]:
-                    self.parent.read_cv(slot * 10 + 32 + cv2)
-            if value == 2:  # Servo pin
-                for cv2 in [0, 1, 2, 3, 4, 7, 8, 9]:
-                    self.parent.read_cv(slot * 10 + 32 + cv2)
-            if value == 3:  # Output pin
-                for cv2 in [0, 1, 2]:
-                    self.parent.read_cv(slot * 10 + 32 + cv2)
-            if value == 4:  # Dual action pin
-                for cv2 in [0, 1, 2, 3, 4, 5, 6]:
-                    self.parent.read_cv(slot * 10 + 32 + cv2)
-            if value == 101:  # Output pin
-                for cv2 in [0, 1, 2]:
-                    self.parent.read_cv(slot * 10 + 32 + cv2)
-            if value == 102:  # PCA Servo pin
-                for cv2 in [0, 1, 2, 3, 4, 7, 8, 9]:
-                    self.parent.read_cv(slot * 10 + 32 + cv2)
+            for level in range(0, value):
+                for cv2 in [2, 3, 4, 5]:
+                    self.parent.read_cv((level +1) *10 + cv2 + 32)
+
         if self.uiController:
             self.uiController.cvChange(cv, value)
 
@@ -106,14 +73,10 @@ class I10001(cv.CVDelegate):
         if cv == 1023:
             v = str(self.parent.CVs[cv])
             return "{}.{}.{}".format(int(v[0:1]), int(v[2:3]), int(v[4:5]))
-        return super(I10001, self).format_cv(cv)
+        return super(I10004, self).format_cv(cv)
 
     def controller(self, tabwidget, decoder):
-        from decoders.mp10001.dec10001 import Dec10001Controller
-        print(decoder)
-        print(tabwidget)
-        self.uiController = Dec10001Controller(decoder, tabwidget)
-        return self.uiController
+        return super(I10004, self).controller(tabwidget, decoder)
 
     def close(self):
         if self.uiController:
