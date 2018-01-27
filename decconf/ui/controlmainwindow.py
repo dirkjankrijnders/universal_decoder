@@ -227,11 +227,16 @@ class ControlMainWindow(object):
         self.ui.ReceivedPacketsList.addItem(_bytes + "\t" + info)
 
     def _about(self):
+        plugin_info = "Plugins loaded:\n"
+        for plugin in self.manager.getAllPlugins():
+            plugin_info += "{} - {}\n".format(plugin.details.get('Decoder', 'Class'), plugin.name)
+
         about_msg_box = QtWidgets.QMessageBox()
         about_msg_box.setText("Decoder configurator Loconet CV based decoders")
         about_msg_box.setInformativeText(
             "Qt Version: {}\n"
-            "Binding used: {} {}".format(__qt_version__, __binding__, __binding_version__))
+            "Binding used: {} {}\n"
+            "{}".format(__qt_version__, __binding__, __binding_version__, plugin_info))
         about_msg_box.exec()
 
     def _export(self):
