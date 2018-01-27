@@ -17,7 +17,7 @@ class CSVWriter(object):
         self.ncv = ncv
         self.fid = fid
 
-    def messageConfirmed(self, msg, reply):
+    def message_confirmed(self, msg, reply):
         lncv = parse_LNCV_message(bytearray(reply))
         print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']), file=self.fid)
         self.ncv -= 1
@@ -29,7 +29,7 @@ class CSVReader(object):
         self.ncv = 0
         self.fid = fid
 
-    def messageConfirmed(self, msg, reply):
+    def message_confirmed(self, msg, reply):
         # lncv = parse_LNCV_message(bytearray(reply))
         # print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']), file=self.fid)
         self.ncv += 1
@@ -41,7 +41,7 @@ class StatsPrinter(object):
         self.ncv = 0
         self.fid = fid
 
-    def messageConfirmed(self, msg, reply):
+    def message_confirmed(self, msg, reply):
         lncv = parse_LNCV_message(bytearray(reply))
         print("{}, {}".format(lncv['lncvNumber'], lncv['lncvValue']))
         self.ncv -= 1
@@ -151,7 +151,9 @@ def main():
     except KeyboardInterrupt:
         pass
 
-    # lb.add_to_queue(stop_module_LNCV_programming(args.moduleclass[0], args.address[0]))
+    lb.write(stop_module_LNCV_programming(args.moduleclass[0], args.address[0]))
+    sleep(1)
+    lb.write(stop_module_LNCV_programming(args.moduleclass[0], args.address[0]))
 
     sleep(1)
     if fid is not None:
