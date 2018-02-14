@@ -8,6 +8,19 @@ def cv2slot(cv):
     return slot, int((cv - 32) - (slot * 10))
 
 
+def twos_comp(val: int, bits):
+    """compute the 2's complement of int value val"""
+    if val > 2 ** (bits - 1):  # if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
+        val = val - (1 << bits)        # compute negative value
+    return val                         # return positive value as is
+
+
+def twos_comp_rev(val, bits):
+    if val < 0:
+        val = val + 2 ** bits
+    return val
+
+
 class I10004(cv.CVDelegate):
     name = "Trainlift LN Module"
     description = "Trainlift LocoNet module"
@@ -57,6 +70,7 @@ class I10004(cv.CVDelegate):
         self.parent.get_cv(cv)
 
     def format_cv(self, cv):
+        print("Formatting cv {}".format(cv))
         if not self.parent.CVs[cv]:
             return ''
         if cv == 1018:
@@ -73,7 +87,26 @@ class I10004(cv.CVDelegate):
         if cv == 1023:
             v = str(self.parent.CVs[cv])
             return "{}.{}.{}".format(int(v[0:1]), int(v[2:3]), int(v[4:5]))
+        elif cv > 31:
+            slot, slot_cv = cv2slot(cv)
+            if slot == 0:
+                if slot_cv == 3 or slot_cv == 4:
+                    return twos_comp(int(self.parent.CVs[cv]), 16)
+            else:
+                if slot_cv == 2 or slot_cv == 3:
+                    return twos_comp(int(self.parent.CVs[cv]), 16)
         return super(I10004, self).format_cv(cv)
+
+    def format_data(self, cv, data):
+        if cv > 31:
+            slot, slot_cv = cv2slot(cv)
+            if slot == 0:
+                if slot_cv == 3 or slot_cv == 4:
+                    return twos_comp_rev(int(data), 16)
+            else:
+                if slot_cv == 2 or slot_cv == 3:
+                    return twos_comp_rev(int(data), 16)
+        return data
 
     def controller(self, tabwidget, decoder):
         return super(I10004, self).controller(tabwidget, decoder)

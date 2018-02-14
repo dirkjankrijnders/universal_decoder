@@ -35,6 +35,9 @@ class CVDelegate(IPlugin):
     def format_cv(self, cv):
         return self.parent.CVs[cv]
 
+    def format_data(self, cv, data):
+        return data
+
     def close(self):
         pass
 
@@ -114,7 +117,7 @@ class CVListModel(QtCore.QAbstractTableModel):
         self.CVs[cv] = value
         if role == QtCore.Qt.EditRole:
             try:
-                self.write_cv(int(cv), int(value))
+                self.write_cv(int(cv), int(self.descriptionDelegate.format_data(cv, value)))
             except:
                 self.set_cv(cv, value)
 
