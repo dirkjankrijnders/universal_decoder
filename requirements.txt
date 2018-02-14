@@ -9,3 +9,4 @@ coveralls
 Qt.py
 pyqt5
 pyserial
+lxml
