@@ -94,9 +94,9 @@ class PinConfigWidget(QtWidgets.QWidget):
                 self.ui.LNAddressSpinBox1.setValue(value)
                 self.ui.LNAddressSpinBox2.setValue(value)
                 self.ui.LNAddressSpinBox3.setValue(value)
-            if pincv == 0:
-                self.ui.arduinopinSpinBox1.setValue(value)
-                self.ui.arduinopinSpinBox2.setValue(value)
+            # if pincv == 0:
+                # self.ui.arduinopinSpinBox1.setValue(value)
+                # self.ui.arduinopinSpinBox2.setValue(value)
             if pincv == 2:
                 self.ui.pos1SpinBox.setValue(value)
                 self.ui.ledValue1SpinBox.setValue(value)
@@ -105,7 +105,7 @@ class PinConfigWidget(QtWidgets.QWidget):
                 self.ui.ledValue2SpinBox.setValue(value)
             if pincv == 4:
                 self.ui.speedSpinBox.setValue(value)
-                self.ui.ledEffectComboBox.setValue(value)
+                # self.ui.ledEffectComboBox.setValue(value)
             if pincv == 7:
                 self.update_feedback_1(value)
             if pincv == 8:
