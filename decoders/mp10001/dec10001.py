@@ -5,7 +5,7 @@ from Qt import QtCompat, QtWidgets
 
 class PinConfigWidget(QtWidgets.QWidget):
     cvsPerPin = 10
-    function_map = {2: 0, 3: 1, 1: 2, 0: 1, 102: 0, '': 4}
+    function_map = {2: 0, 3: 1, 1: 2, 0: 1, 102: 3, '': 4}
 
     def slot_parameter_to_cv(self, parameter, slot=None):
         if slot is None:
@@ -21,7 +21,7 @@ class PinConfigWidget(QtWidgets.QWidget):
         self.ui = QtCompat.loadUi(os.path.join(plugin_directory, "pinconfform.ui"))
         self.ui.stackedWidget.setCurrentIndex(0)
 
-        for i in ["Servo", "LED", "Input", "N/A"]:
+        for i in ["Servo", "LED", "Input", "PCA Servo", "N/A"]:
             self.ui.comboBox_3.addItem(i)
             self.ui.comboBox_2.addItem(i)
             self.ui.comboBox_4.addItem(i)
@@ -151,16 +151,20 @@ class PinConfigWidget(QtWidgets.QWidget):
         if index < 0:
             return
         value = index
+        if value == 3:
+            value = 0
         self.ui.stackedWidget.setCurrentIndex(value)
-        self.ui.comboBox_2.setCurrentIndex(value)
-        self.ui.comboBox_3.setCurrentIndex(value)
-        self.ui.comboBox_4.setCurrentIndex(value)
+        self.ui.comboBox_2.setCurrentIndex(index)
+        self.ui.comboBox_3.setCurrentIndex(index)
+        self.ui.comboBox_4.setCurrentIndex(index)
         if index == 0:
             value = 2  # servo
         elif index == 1:
             value = 3  # output/LED
         elif index == 2:
             value = 1  # input
+        elif index == 3:
+            value = 102 # PCA Servo
         self.decoder.write_cv(cv, value)
 
     def arduinopinChanged(self, value):
