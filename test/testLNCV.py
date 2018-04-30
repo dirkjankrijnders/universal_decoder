@@ -123,6 +123,34 @@ class TestLNCV(unittest.TestCase):
         expected_info = "Sensor 86: 0"
         self.assertEqual(expected_info, info[1])
 
+        msg = LocoNet.OPC_INPUT_REP
+        info = format_loconet_message([msg, 0x28, 0x60, 0x05])
+        expected_hex = "B2 28 60 05"
+        self.assertEqual(expected_hex, info[0])
+        expected_info = "Sensor 82: 0"
+        self.assertEqual(expected_info, info[1])
+
+        msg = LocoNet.OPC_INPUT_REP
+        info = format_loconet_message([msg, 0x25, 0x70, 0x18])
+        expected_hex = "B2 25 70 18"
+        self.assertEqual(expected_hex, info[0])
+        expected_info = "Sensor 76: 1"
+        self.assertEqual(expected_info, info[1])
+
+        msg = LocoNet.OPC_INPUT_REP
+        info = format_loconet_message([msg, 0x03, 0x44, 0x0A])
+        expected_hex = "B2 03 44 0A"
+        self.assertEqual(expected_hex, info[0])
+        expected_info = "Sensor 1031: 0"
+        self.assertEqual(expected_info, info[1])
+
+        msg = LocoNet.OPC_SW_REQ
+        info = format_loconet_message([msg, 0x1e, 0x10, 0x41])
+        expected_hex = "B0 1E 10 41"
+        self.assertEqual(expected_hex, info[0])
+        expected_info = "Switch req 31: 0 - 1"
+        self.assertEqual(expected_info, info[1])
+
 
 if __name__ == '__main__':
     logger = logging.getLogger('decconf')
