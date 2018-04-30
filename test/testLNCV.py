@@ -12,7 +12,7 @@ class TestLNCV(unittest.TestCase):
         self.okCalled = False
 
     # noinspection PyUnusedLocal
-    def messageConfirmed(self, msg, reply):
+    def message_confirmed(self, msg, reply):
         self.okCalled = True
 
     def test_recieve_loconet_bytes(self):
