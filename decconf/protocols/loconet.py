@@ -40,7 +40,10 @@ class LocoNet(object):
     OPC_WR_SL_DATA = 0xef
     OPC_MASK = 0x7f  # mask for acknowledge opcodes
 
-    LNCV_SRC_MASTER = 0x00
+    OPC_INPUT_REP_CB = 0x40  # control bit, reserved otherwise      */
+    OPC_INPUT_REP_SW = 0x20  # input is switch input, aux otherwise */
+    OPC_INPUT_REP_HI = 0x10  # input is HI, LO otherwise            */
+
     LNCV_SRC_KPU = 0x01
     # KPU is, e.g., an IntelliBox
     # 0x02 has no associated meaning
@@ -256,7 +259,13 @@ def format_loconet_message(data: bytearray) -> str:
     elif data[0] == LocoNet.OPC_SW_REQ:
         info = "Switch request"
     elif data[0] == LocoNet.OPC_INPUT_REP:
-        info = "Feedback"
+        addr = (data[1] | ((data[2] & 0x0F) << 7)) << 1
+        addr +=1
+        if data[2] & LocoNet.OPC_INPUT_REP_SW :
+            addr += 1
+        state = (data[2] & LocoNet.OPC_INPUT_REP_HI) >> 4
+        info = "Sensor {}: {}".format(addr, state)
+
     return " ".join("{:02x}".format(b) for b in data).upper(), info
 
 
