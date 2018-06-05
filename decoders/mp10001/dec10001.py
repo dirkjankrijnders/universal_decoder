@@ -165,6 +165,8 @@ class PinConfigWidget(QtWidgets.QWidget):
             value = 1  # input
         elif index == 3:
             value = 102 # PCA Servo
+        else:
+            return
         self.decoder.write_cv(cv, value)
 
     def arduinopinChanged(self, value):
