@@ -110,6 +110,9 @@ class PinConfigWidget(QtWidgets.QWidget):
                 self.update_feedback_1(value)
             if pincv == 8:
                 self.update_feedback_2(value)
+        else:
+            if cv >= 9:
+                self.functionChanged()
 
     def update_feedback_1(self, value: int = None):
         if value is None:
