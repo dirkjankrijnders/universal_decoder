@@ -15,3 +15,9 @@ cover
 .idea
 Qt
 venv
+*.npy
+*.jpg
+loco.xml*
+*.npz
+*.hex
+*.csv
