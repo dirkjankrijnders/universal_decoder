@@ -17,7 +17,7 @@ class CVController(object):
         self.decoder = None
         self.decoder_ui = None
 
-    def set_decoder(self, dec, widget):
+    def set_decoder(self, dec: CVListModel, widget):
         if not isinstance(dec, CVListModel):
             return
 

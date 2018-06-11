@@ -41,7 +41,6 @@ class RecieveThread(QtCore.QThread):
 
 class ControlMainWindow(object):
     def __init__(self):
-        # super(ControlMainWindow, self).__init__(parent)
         super(ControlMainWindow, self).__init__()
 
         self.configfile = os.path.join(user_config_dir("Decconf", "Pythsoft"), 'decconf.ini')
