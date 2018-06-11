@@ -203,10 +203,10 @@ class PinConfigWidget(QtWidgets.QWidget):
         self.decoder.write_cv(self.slot_parameter_to_cv(8), value)
 
     def position_1_clicked(self):
-        self.decoder.cs.add_to_queue(switch(self.cv(0), True))
+        self.decoder.cs.add_to_queue(switch(self.decoder.CVs[self.slot_parameter_to_cv(1)], True, False))
 
     def position_2_clicked(self):
-        self.decoder.cs.add_to_queue(switch(self.cv(0), False))
+        self.decoder.cs.add_to_queue(switch(self.decoder.CVs[self.slot_parameter_to_cv(1)], True, True))
 
 
 class Dec10001Controller(object):
