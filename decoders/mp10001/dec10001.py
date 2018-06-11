@@ -1,6 +1,8 @@
 import os
 
 from Qt import QtCompat, QtWidgets
+from decconf.datamodel.CV import CVListModel
+from decconf.protocols.loconet import switch
 
 
 class PinConfigWidget(QtWidgets.QWidget):
@@ -12,7 +14,9 @@ class PinConfigWidget(QtWidgets.QWidget):
             slot = self.index
         return slot * self.cvsPerPin + 32 + parameter
 
-    def __init__(self, index, decoder):
+    def __init__(self, index: int, decoder: CVListModel):
+        """Prepares the pin configuration UI for pin/slot index of decoder
+        """
         super(PinConfigWidget, self).__init__()
         self.decoder = decoder
         self.index = index
@@ -59,6 +63,9 @@ class PinConfigWidget(QtWidgets.QWidget):
 
         self.ui.feedback_1_spinBox.valueChanged.connect(self.feedback_1_changed)
         self.ui.feedback_2_spinBox.valueChanged.connect(self.feedback_2_changed)
+
+        self.ui.pos1Button.clicked.connect(self.position_1_clicked)
+        self.ui.pos2Button.clicked.connect(self.position_2_clicked)
 
         self.decoder.dataChanged.connect(self.cvDataChanged)
 
@@ -194,6 +201,13 @@ class PinConfigWidget(QtWidgets.QWidget):
 
     def feedback_2_changed(self, value):
         self.decoder.write_cv(self.slot_parameter_to_cv(8), value)
+
+    def position_1_clicked(self):
+        self.decoder.cs.add_to_queue(switch(self.cv(0), True))
+
+    def position_2_clicked(self):
+        self.decoder.cs.add_to_queue(switch(self.cv(0), False))
+
 
 class Dec10001Controller(object):
     """docstring for dec10001controller"""

@@ -293,6 +293,20 @@ class LNMessage(object):
         self.expectReply = expect_reply
 
 
+def switch(address: int, position: bool, state: bool = True):
+    buf = LocoNet.OPC_SW_REQ
+    """
+         addr = (data[1] | ((data[2] & 0x0F) << 7))
+        addr +=1
+        if data[2] & LocoNet.OPC_INPUT_REP_SW :
+            addr += 1
+        onoff = (data[2] & LocoNet.OPC_SW_REQ_OUT) >> 4
+        state = (data[2] & LocoNet.OPC_SW_REQ_DIR)
+        info = "Switch req %i: %i - %i" % (addr, state, onoff)
+    """
+    return LNMessage(buf)
+
+
 def start_module_LNCV_programming(device_class, address):
     return make_LNCV_response(device_class, 0, address, LocoNet.LNCV_FLAG_PRON, opc=LocoNet.OPC_IMM_PACKET,
                               req=LocoNet.LNCV_REQID_CFGREQUEST)
