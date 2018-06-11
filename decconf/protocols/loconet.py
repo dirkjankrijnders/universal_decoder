@@ -294,16 +294,16 @@ class LNMessage(object):
 
 
 def switch(address: int, position: bool, state: bool = True):
-    buf = LocoNet.OPC_SW_REQ
-    """
-         addr = (data[1] | ((data[2] & 0x0F) << 7))
-        addr +=1
-        if data[2] & LocoNet.OPC_INPUT_REP_SW :
-            addr += 1
-        onoff = (data[2] & LocoNet.OPC_SW_REQ_OUT) >> 4
-        state = (data[2] & LocoNet.OPC_SW_REQ_DIR)
-        info = "Switch req %i: %i - %i" % (addr, state, onoff)
-    """
+    buf = [LocoNet.OPC_SW_REQ]
+    address -= 1
+    buf.append(address & 0xFF)
+    buf.append((address >> 7) & 0x0F)
+    buf.append(0x01)
+    if position:
+        buf[2] |= LocoNet.OPC_SW_REQ_OUT
+    if state:
+        buf[2] |= LocoNet.OPC_SW_REQ_DIR
+    buf = checksum_loconet_buffer(bytearray(buf))
     return LNMessage(buf)
 
 

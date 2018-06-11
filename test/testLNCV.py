@@ -4,7 +4,8 @@ import unittest
 
 from decconf.protocols.loconet import recieve_loconet_bytes, LNCV_confirmed_message, LNCVWriteMessage, \
     write_module_LNCV, start_module_LNCV_programming, stop_module_LNCV_programming, checksum_loconet_buffer, \
-    format_loconet_message, LocoNet, read_module_LNCV, LNCVReadMessage, parse_LNCV_message, compute_PXCT_from_bytes
+    format_loconet_message, LocoNet, read_module_LNCV, LNCVReadMessage, parse_LNCV_message, compute_PXCT_from_bytes, \
+    switch
 
 
 class TestLNCV(unittest.TestCase):
@@ -143,6 +144,11 @@ class TestLNCV(unittest.TestCase):
         self.assertEqual(expected_hex, info[0])
         expected_info = "Switch req 31: 0 - 1"
         self.assertEqual(expected_info, info[1])
+
+    def test_switch_message(self):
+        msg = switch(31, 1, 0)
+        expected_msg = [LocoNet.OPC_SW_REQ, 0x1e, 0x10, 0x41]
+        self.assertEqual(expected_msg, [int(b) for b in msg.msg])
 
 
 if __name__ == '__main__':
