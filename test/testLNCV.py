@@ -146,9 +146,22 @@ class TestLNCV(unittest.TestCase):
         self.assertEqual(expected_info, info[1])
 
     def test_switch_message(self):
-        msg = switch(31, 1, 0)
+        msg = switch(31, False, True)
         expected_msg = [LocoNet.OPC_SW_REQ, 0x1e, 0x10, 0x41]
-        self.assertEqual(expected_msg, [int(b) for b in msg.msg])
+        self.assertEqual(expected_msg, [int(b) for b in msg.msg]) 
+		
+        msg = switch(22, True, True)
+        expected_msg = [LocoNet.OPC_SW_REQ, 0x15, 0x30, 0x6a]
+        self.assertEqual(expected_msg, [int(b) for b in msg.msg]) 
+
+        msg = switch(22, False, True)
+        expected_msg = [LocoNet.OPC_SW_REQ, 0x15, 0x10, 0x4a]
+        self.assertEqual(expected_msg, [int(b) for b in msg.msg]) 
+		
+        msg = switch(2, False, True)
+        expected_msg = [LocoNet.OPC_SW_REQ, 0x01, 0x10, 0x5e]
+        self.assertEqual(expected_msg, [int(b) for b in msg.msg]) 
+		
 
 
 if __name__ == '__main__':

@@ -300,9 +300,9 @@ def switch(address: int, position: bool, state: bool = True):
     buf.append((address >> 7) & 0x0F)
     buf.append(0x01)
     if position:
-        buf[2] |= LocoNet.OPC_SW_REQ_OUT
-    if state:
         buf[2] |= LocoNet.OPC_SW_REQ_DIR
+    if state:
+        buf[2] |= LocoNet.OPC_SW_REQ_OUT
     buf = checksum_loconet_buffer(bytearray(buf))
     return LNMessage(buf)
 
