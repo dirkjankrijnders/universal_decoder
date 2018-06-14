@@ -69,7 +69,9 @@ OneWire ds(A3);
 byte addr[8];
 byte dsdata[9];
 
-#define LOCONET_TX_PIN 5
+#ifndef LOCONET_TX_PIN
+  #define LOCONET_TX_PIN 7
+#endif
 
 extern int __bss_start, __bss_end;
 
