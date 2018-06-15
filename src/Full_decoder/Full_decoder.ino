@@ -2,7 +2,7 @@
 
 
 #include "config.h"
-#define VERSION 10300
+#define VERSION 10302
 
 #if PINSERVO == 1
 #warning "USING SERVO"
@@ -470,15 +470,17 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);
       DEBUG(read_cv(&_CV, lncvAddress));
-      uint8_t slot = cv2slot(lncvAddress);
-      DEBUG("\n");
-      DEBUG("Slot: ");
-      DEBUG(slot);
-      DEBUG(" SlotCV: ");
-      DEBUG(cv2slotcv(lncvAddress, slot));
-      DEBUG("\n");
-      confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
-      confpins[slot]->print();
+      if (lncvAddress > 31 && false) {
+        uint8_t slot = cv2slot(lncvAddress);
+        DEBUG("\n");
+        DEBUG("Slot: ");
+        DEBUG(slot);
+        DEBUG(" SlotCV: ");
+        DEBUG(cv2slotcv(lncvAddress, slot));
+        DEBUG("\n");
+        confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+        confpins[slot]->print();
+      }
       //delete(confpins[slot]);
       //configureSlot(slot);
       //lncv[lncvAddress] = lncvValue;
