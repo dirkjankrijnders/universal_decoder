@@ -108,7 +108,7 @@ uint16_t readTemperature() {
 
 uint16_t readPowerVoltage() {
   uint16_t adcValue = analogRead(POWER_VOLTAGE_PIN);
-  return adcValue * 15.3117207;
+  return adcValue * 4.887585533 * 13;
 }
 
 void reportSlot(uint16_t slot, uint16_t state) {
