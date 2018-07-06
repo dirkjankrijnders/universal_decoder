@@ -174,6 +174,8 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new DualAction(slot, pin, address, pos1, pos2, speed, pin_config);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
+        case 5: // Switch magnet
+        break;
 #if TLC_SUPPORT
       case 101: // TLC5947 PWM LED Controller.
         pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
