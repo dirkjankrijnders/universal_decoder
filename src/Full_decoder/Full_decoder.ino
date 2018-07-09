@@ -2,7 +2,7 @@
 
 
 #include "config.h"
-#define VERSION 10398
+#define VERSION 10400
 
 #if PINSERVO == 1
 #warning "USING SERVO"
