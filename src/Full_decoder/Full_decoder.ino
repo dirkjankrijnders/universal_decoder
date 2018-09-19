@@ -266,8 +266,8 @@ void setup() {
 
 void loop() {
 	pins_busy = false;
-  if (~pins_to_update.isEmpty()) {
-    if (~confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
+  if (!pins_to_update.isEmpty()) {
+    if (!confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
       DEBUG("Done updating ");
       DEBUGLN(pins_to_update.first());
       pins_to_update.shift(); // ..drop the first item
