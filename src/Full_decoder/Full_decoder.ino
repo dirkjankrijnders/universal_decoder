@@ -1,8 +1,9 @@
 #include <OneWire.h>
-
+#define CIRCULAR_BUFFER_XS
+#include <CircularBuffer.h>
 
 #include "config.h"
-#define VERSION 10400
+#define VERSION 10499
 
 #if PINSERVO == 1
 #warning "USING SERVO"
@@ -54,6 +55,7 @@ void disableServos();
 
 bool pins_busy = false;
 
+CircularBuffer<uint8_t, MAX> pins_to_update;
 /* 
 The LocoNet CV related stuff
 */
@@ -206,6 +208,7 @@ void configureSlot(uint8_t slot) {
     DEBUG("Pin #");
     DEBUGLN(slot);
     confpins[slot]->print();
+    pins_to_update.push(slot);
 }
 void setup() {
 #ifdef USE_SERIAL
@@ -263,9 +266,15 @@ void setup() {
 
 void loop() {
 	pins_busy = false;
-  for (uint8_t i =0 ; i < pins_conf ; i++) {
-	 confpins[i]->update();
-  };
+  if (~pins_to_update.isEmpty()) {
+    if (~confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
+      DEBUG("Done updating ");
+      DEBUGLN(pins_to_update.first());
+      pins_to_update.shift(); // ..drop the first item
+      DEBUG(pins_to_update.size());
+      DEBUGLN(" active pins left in the queue");      
+    }
+  }
   
   /*** LOCONET ***/
   LnPacket = LocoNet.receive();
@@ -292,6 +301,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
   for (uint8_t i =0 ; i < MAX ; i++) {
     if (confpins[i]->_address == Address){
       confpins[i]->set(Direction, Output);
+      pins_to_update.push(i);
       eeprom_write_word((uint16_t*)&(_CV.conf[i].servo.state), confpins[i]->get_state());
       DEBUG("Thrown switch: ");
       DEBUG(i);
