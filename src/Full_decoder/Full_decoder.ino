@@ -1,7 +1,14 @@
-#include <Servo.h>
+#include <OneWire.h>
+
 
 #include "config.h"
-#define VERSION 10200
+#define VERSION 10400
+
+#if PINSERVO == 1
+#warning "USING SERVO"
+  #include <Servo.h>
+#endif
+
 /* We're a loconet decoder! */
 #include <LocoNet.h>
 
@@ -19,6 +26,8 @@ decoder_conf_t EEMEM _CV = {
 ConfiguredPin* confpins[MAX];
 uint8_t pins_conf = 0;
 
+/* TLC5947 Support*/
+#if TLC_SUPPORT
 #include "Adafruit_TLC5947.h"
 
 // How many boards do you have chained?
@@ -30,6 +39,15 @@ uint8_t pins_conf = 0;
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
 
 Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
+#endif // TLC_SUPPORT
+
+/* PCA9685 Support */
+
+#include <Adafruit_PWMServoDriver.h>
+
+// Default address = 0x40
+Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver();
+
 
 void enableServos();
 void disableServos();
@@ -47,7 +65,15 @@ LocoNetCVClass lnCV;
 
 boolean programmingMode;
 
-#define LOCONET_TX_PIN 5
+OneWire ds(A3);
+byte addr[8];
+byte dsdata[9];
+
+#ifndef LOCONET_TX_PIN
+  #define LOCONET_TX_PIN 7
+#endif
+
+#define POWER_VOLTAGE_PIN A2
 
 extern int __bss_start, __bss_end;
 
@@ -57,6 +83,36 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 };
 
+uint16_t readTemperature() {
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44,1);         // start conversion, with parasite power on at the end
+
+  delay(1000);     // maybe 750ms is enough, maybe not
+  // we might do a ds.depower() here, but the reset will take care of it.
+
+  ds.reset();
+  ds.select(addr);    
+  ds.write(0xBE);         // Read Scratchpad
+
+  for (uint8_t i = 0; i < 9; i++) {           // we need 9 bytes
+    dsdata[i] = ds.read();
+  }
+  int16_t raw = (dsdata[1] << 8) | dsdata[0];
+  byte cfg = (dsdata[4] & 0x60);
+  // at lower res, the low bits are undefined, so let's zero them
+  if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
+  else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
+  else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
+  //// default is 12 bit resolution, 750 ms conversion time
+  return raw; // To be devided by 16;
+}
+
+uint16_t readPowerVoltage() {
+  uint16_t adcValue = analogRead(POWER_VOLTAGE_PIN);
+  return adcValue * 4.887585533 * 13;
+}
+
 void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG("Reporting slot ");
   DEBUG(slot);
@@ -64,10 +120,14 @@ void reportSlot(uint16_t slot, uint16_t state) {
   DEBUG(confpins[slot]->_address);
   DEBUG(" State: ");
   DEBUGLN(state);
+  if (slot == 0)
+    return;
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
 void setSlot(uint16_t slot, uint16_t state) {
+  if (slot == 0)
+    return;
   if (slot < MAX)
     confpins[slot]->set(state, 0);
 }
@@ -77,11 +137,13 @@ void reportSensor(uint16_t address, bool state) {
 
 void configureSlot(uint8_t slot) {
   uint8_t pin_config;
-  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin;
-
+  uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin, secondary_address;
+  bool cumulative, force_on, report_inverse;
+  
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
     address = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.address));
+    DEBUGLN(pin_config);
     switch (pin_config) {
       case 2: //Servo
         //ServoSwitch(i,0);
@@ -95,11 +157,14 @@ void configureSlot(uint8_t slot) {
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
       case 1: // Input
-        confpins[slot] = new InputPin(slot, pin, address);
+        report_inverse = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.options)) & 0x01) == 0x01);
+        secondary_address  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.secadd));
+        confpins[slot] = new InputPin(slot, pin, address, report_inverse, secondary_address);
         break;
       case 3: // Output
-        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
-        confpins[slot] = new OutputPin(slot, pin, address, pin_config);
+        cumulative = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
+        force_on = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x02) == 0x02);
+        confpins[slot] = new OutputPin(slot, pin, address, cumulative, force_on);
         break;
       case 4: // Dual action
         pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
@@ -110,10 +175,30 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new DualAction(slot, pin, address, pos1, pos2, speed, pin_config);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
         break;
+      case 5: // Switch magnet
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.arduinopin2));
+        speed  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.duration));
+        fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.fbslot1));
+        fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.fbslot2));
+        confpins[slot] = new MagnetSwitch(slot, pin, address, pos2, speed, fbslot1, fbslot2);
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.state)));
+          break;
+#if TLC_SUPPORT
       case 101: // TLC5947 PWM LED Controller.
         pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
         confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, 1000);
-        break;       
+        break;
+#endif // TLC_SUPPORT
+      case 102: // PCA9686
+        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos1));
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pos2));
+        speed = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.speed));
+        fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot1));
+        fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.fbslot2));
+        powerpin = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.pwrslot));
+        confpins[slot] = new PCA9685Servo(&pca, slot, pin, address, pos1, pos2, speed, powerpin, fbslot1, fbslot2);
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.state)));
+        break;
       default:
         confpins[slot] = new ConfiguredPin(slot, pin, address);
         break;
@@ -143,9 +228,37 @@ void setup() {
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
   }
+#if TLC_SUPPORT
   tlc.begin();
+#endif //TLC_SUPPORT
+  
+  if (!ds.search(addr)) {
+    ds.reset_search();
+    for (uint8_t i = 0; i < 7 ; i++) {
+      addr[i] = 0x00;
+    }
+    DEBUGLN("No ds18s20 found for UID");
+  } 
 
-  programmingMode = false;
+#ifdef DEBUG_OUTPUT
+    else {
+    DEBUG("UID: ");
+    for (uint8_t i = 0; i < 7; i++) {
+      Serial.print(i);
+      Serial.print(addr[i], HEX);
+    }
+    DEBUGLN(".");
+  }    
+#endif
+
+  pca.begin();
+  pca.setPWMFreq(70);
+
+#ifdef POWER_VOLTAGE_PIN
+  pinMode(POWER_VOLTAGE_PIN, INPUT);
+  Serial.print("Power voltage in mV: ");
+  Serial.println(readPowerVoltage());
+#endif
 }
 
 void loop() {
@@ -250,7 +363,30 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         DEBUG("\n");
 
         return LNCV_LACK_OK;
-		  } else if (lncvAddress == 1023) {
+		  } else if (lncvAddress == 1018) {
+        lncvValue = readTemperature();
+        return LNCV_LACK_OK;
+		  } else if (lncvAddress == 1019) {
+        lncvValue = addr[0];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[1]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1020) {
+        lncvValue = addr[2];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[3]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1021) {
+        lncvValue = addr[4];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[5]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1022) {
+        lncvValue = addr[6];
+        lncvValue = lncvValue << 8;
+        lncvValue |= addr[7]; 
+        return LNCV_LACK_OK;
+      } else if (lncvAddress == 1023) {
         lncvValue = VERSION;
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1024) {
@@ -284,6 +420,9 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
           lncvValue = stats->Collisions;
         }
         return LNCV_LACK_OK;
+      } else if (lncvAddress == 1034) {
+          lncvValue = readPowerVoltage();
+          return LNCV_LACK_OK;
       } else {
         // Invalid LNCV address, request a NAXK
         return LNCV_LACK_ERROR_UNSUPPORTED;
@@ -356,14 +495,17 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);
       DEBUG(read_cv(&_CV, lncvAddress));
-      uint8_t slot = cv2slot(lncvAddress);
-      DEBUG("\n");
-      DEBUG("Slot: ");
-      DEBUG(slot);
-      DEBUG(" SlotCV: ");
-      DEBUG(cv2slotcv(lncvAddress, slot));
-      DEBUG("\n");
-      confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+      if (lncvAddress > 31 && false) {
+        uint8_t slot = cv2slot(lncvAddress);
+        DEBUG("\n");
+        DEBUG("Slot: ");
+        DEBUG(slot);
+        DEBUG(" SlotCV: ");
+        DEBUG(cv2slotcv(lncvAddress, slot));
+        DEBUG("\n");
+        confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+        confpins[slot]->print();
+      }
       //delete(confpins[slot]);
       //configureSlot(slot);
       //lncv[lncvAddress] = lncvValue;
