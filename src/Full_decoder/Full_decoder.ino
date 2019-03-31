@@ -1,12 +1,15 @@
 #include <OneWire.h>
-
+#define CIRCULAR_BUFFER_XS
+#include <CircularBuffer.h>
 
 #include "config.h"
-#define VERSION 10400
+#define VERSION 10499
+
 
 #if PINSERVO == 1
 #warning "USING SERVO"
   #include <Servo.h>
+  features = features | 1;
 #endif
 
 /* We're a loconet decoder! */
@@ -25,6 +28,7 @@ decoder_conf_t EEMEM _CV = {
 #define MAX 24
 ConfiguredPin* confpins[MAX];
 uint8_t pins_conf = 0;
+uint8_t features = 0;
 
 /* TLC5947 Support*/
 #if TLC_SUPPORT
@@ -33,11 +37,17 @@ uint8_t pins_conf = 0;
 // How many boards do you have chained?
 #define NUM_TLC5974 1
 
+#ifdef TLC_PROTO
 #define data   10
 #define clock   16
 #define latch   14
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
-
+#else
+#define data   16
+#define clock   15
+#define latch   10
+#define oe  -1  // set to -1 to not use the enable pin (its optional)
+#endif
 Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
 #endif // TLC_SUPPORT
 
@@ -47,13 +57,14 @@ Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
 
 // Default address = 0x40
 Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver();
-
+//features = features | 4;
 
 void enableServos();
 void disableServos();
 
 bool pins_busy = false;
 
+CircularBuffer<uint8_t, MAX> pins_to_update;
 /* 
 The LocoNet CV related stuff
 */
@@ -185,8 +196,9 @@ void configureSlot(uint8_t slot) {
           break;
 #if TLC_SUPPORT
       case 101: // TLC5947 PWM LED Controller.
-        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
-        confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, 1000);
+        pos1 = eeprom_read_word((uint16_t*)&(_CV.conf[slot].led.value1));
+        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].led.function)) & 0x01) == 0x01);
+        confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, pos1);
         break;
 #endif // TLC_SUPPORT
       case 102: // PCA9686
@@ -206,6 +218,7 @@ void configureSlot(uint8_t slot) {
     DEBUG("Pin #");
     DEBUGLN(slot);
     confpins[slot]->print();
+    pins_to_update.push(slot);
 }
 void setup() {
 #ifdef USE_SERIAL
@@ -225,13 +238,21 @@ void setup() {
   DEBUG("Max # of pins:");
   DEBUGLN(MAX);
   pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
+  DEBUGLN(freeRam())
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
+    DEBUGLN(freeRam())
   }
 #if TLC_SUPPORT
   tlc.begin();
+  features = features | 4;
 #endif //TLC_SUPPORT
-  
+  features = features | 2;
+#if PINSERVO
+  features = features | 1;
+#endif
+  ds.reset_search();
+  delay(250);
   if (!ds.search(addr)) {
     ds.reset_search();
     for (uint8_t i = 0; i < 7 ; i++) {
@@ -263,9 +284,16 @@ void setup() {
 
 void loop() {
 	pins_busy = false;
-  for (uint8_t i =0 ; i < pins_conf ; i++) {
-	 confpins[i]->update();
-  };
+  if (!pins_to_update.isEmpty()) {
+    if (!confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
+      DEBUG("Done updating ");
+      DEBUGLN(pins_to_update.first());
+      pins_to_update.shift(); // ..drop the first item
+      DEBUG(pins_to_update.size());
+      DEBUGLN(" active pins left in the queue");      
+    }
+    DEBUGLN(freeRam())
+  }
   
   /*** LOCONET ***/
   LnPacket = LocoNet.receive();
@@ -279,6 +307,7 @@ void loop() {
       packetConsumed = lnCV.processLNCVMessage(LnPacket);
       DEBUG("End Loop\n");
     }
+    DEBUGLN(freeRam())
   }
 };
 
@@ -292,6 +321,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
   for (uint8_t i =0 ; i < MAX ; i++) {
     if (confpins[i]->_address == Address){
       confpins[i]->set(Direction, Output);
+      pins_to_update.push(i);
       eeprom_write_word((uint16_t*)&(_CV.conf[i].servo.state), confpins[i]->get_state());
       DEBUG("Thrown switch: ");
       DEBUG(i);
@@ -422,6 +452,9 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
         return LNCV_LACK_OK;
       } else if (lncvAddress == 1034) {
           lncvValue = readPowerVoltage();
+          return LNCV_LACK_OK;
+      } else if (lncvAddress == 1035) {
+          lncvValue = features;
           return LNCV_LACK_OK;
       } else {
         // Invalid LNCV address, request a NAXK
