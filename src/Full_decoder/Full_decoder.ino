@@ -222,6 +222,7 @@ void configureSlot(uint8_t slot) {
 }
 void setup() {
 #ifdef USE_SERIAL
+#warning Debug!
   Serial.begin(57600);
   while (!Serial){
     ;
@@ -238,7 +239,8 @@ void setup() {
   DEBUG("Max # of pins:");
   DEBUGLN(MAX);
   pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
-  DEBUGLN(freeRam())
+  if (pins_conf > MAX) pins_conf = MAX;
+  DEBUGLN(freeRam());
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
     DEBUGLN(freeRam())
@@ -285,14 +287,15 @@ void setup() {
 void loop() {
 	pins_busy = false;
   if (!pins_to_update.isEmpty()) {
-    if (!confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
-      DEBUG("Done updating ");
-      DEBUGLN(pins_to_update.first());
-      pins_to_update.shift(); // ..drop the first item
-      DEBUG(pins_to_update.size());
-      DEBUGLN(" active pins left in the queue");      
+    if (confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
+      pins_to_update.push(pins_to_update.first());
     }
-    DEBUGLN(freeRam())
+    /* DEBUG("Done updating ");
+    DEBUGLN(pins_to_update.first());
+    pins_to_update.shift(); // ..drop the first item
+    DEBUG(pins_to_update.size());
+    DEBUGLN(" active pins left in the queue");*/
+    // DEBUGLN(freeRam())
   }
   
   /*** LOCONET ***/
