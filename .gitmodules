@@ -1,3 +1,4 @@
 [submodule "lib/libdec"]
 	path = lib/libdec
-	url = git@github.com:dirkjankrijnders/LN_Servo_playground.git
+	url = git@git.krijnders.net:dirkjan/libdec.git
+	branch = develop
