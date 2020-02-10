@@ -3,7 +3,7 @@
 #include <CircularBuffer.h>
 
 #include "config.h"
-#define VERSION 10499
+#define VERSION 10500
 
 
 #if PINSERVO == 1
