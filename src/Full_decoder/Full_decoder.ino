@@ -148,7 +148,7 @@ void reportSensor(uint16_t address, bool state) {
 void configureSlot(uint8_t slot) {
   uint8_t pin_config;
   uint16_t pin, address, pos1, pos2, speed, fbslot1, fbslot2, powerpin, secondary_address;
-  bool cumulative, force_on, report_inverse;
+  bool cumulative, force_on, report_inverse, keep_update;
   
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
@@ -168,8 +168,9 @@ void configureSlot(uint8_t slot) {
         break;
       case 1: // Input
         report_inverse = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.options)) & 0x01) == 0x01);
+        keep_update = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.options)) & 0x02) == 0x02);
         secondary_address  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].input.secadd));
-        confpins[slot] = new InputPin(slot, pin, address, report_inverse, secondary_address);
+        confpins[slot] = new InputPin(slot, pin, address, report_inverse, secondary_address, keep_update);
         break;
       case 3: // Output
         cumulative = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].output.options)) & 0x01) == 0x01);
