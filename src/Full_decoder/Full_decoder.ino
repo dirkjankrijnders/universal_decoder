@@ -1,9 +1,8 @@
 #include <OneWire.h>
-#define CIRCULAR_BUFFER_XS
-#include <CircularBuffer.h>
+#include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10499
+#define VERSION 10501
 
 
 #if PINSERVO == 1
@@ -64,7 +63,7 @@ void disableServos();
 
 bool pins_busy = false;
 
-CircularBuffer<uint8_t, MAX> pins_to_update;
+LinkedList<uint8_t> pins_to_update;
 /* 
 The LocoNet CV related stuff
 */
@@ -218,7 +217,7 @@ void configureSlot(uint8_t slot) {
     DEBUG("Pin #");
     DEBUGLN(slot);
     confpins[slot]->print();
-    pins_to_update.push(slot);
+    pins_to_update.add(slot);
 }
 void setup() {
 #ifdef USE_SERIAL
@@ -283,18 +282,24 @@ void setup() {
   Serial.println(readPowerVoltage());
 #endif
 }
+uint8_t current_pin_list;
 
 void loop() {
-	pins_busy = false;
-  if (!pins_to_update.isEmpty()) {
-    if (confpins[pins_to_update.first()]->update()) { // Update the first item, as long as update() returns true, otherwise...
-      pins_to_update.push(pins_to_update.first());
+
+  if (!(pins_to_update.size() == 0)) {
+	  current_pin_list += 1;
+    if (current_pin_list >= pins_to_update.size())
+      current_pin_list = 0;
+    //DEBUG("Updating pin ");
+    //DEBUGLN(pins_to_update.get(current_pin_list));
+    if (!confpins[pins_to_update.get(current_pin_list)]->update()) { // Update the first item, as long as update() returns true, otherwise...
+      //pins_to_update.push(pins_to_update.first());
+      DEBUG("Done updating ");
+      DEBUGLN(pins_to_update.get(current_pin_list));
+      pins_to_update.remove(current_pin_list); // ..drop the first item
+      DEBUG(pins_to_update.size());
+      DEBUGLN(" active pins left in the queue");
     }
-    /* DEBUG("Done updating ");
-    DEBUGLN(pins_to_update.first());
-    pins_to_update.shift(); // ..drop the first item
-    DEBUG(pins_to_update.size());
-    DEBUGLN(" active pins left in the queue");*/
     // DEBUGLN(freeRam())
   }
   
@@ -310,6 +315,8 @@ void loop() {
       packetConsumed = lnCV.processLNCVMessage(LnPacket);
       DEBUG("End Loop\n");
     }
+      DEBUG(pins_to_update.size());
+      DEBUGLN(" active pins left in the queue");
     DEBUGLN(freeRam())
   }
 };
@@ -323,8 +330,13 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
   DEBUGLN(Output ? "On" : "Off");
   for (uint8_t i =0 ; i < MAX ; i++) {
     if (confpins[i]->_address == Address){
+      // Set new state
       confpins[i]->set(Direction, Output);
-      pins_to_update.push(i);
+      // Add to the update queue
+    pins_to_update.add(i);
+      // Call update once to get started
+      confpins[i]->update();
+      // Save the state
       eeprom_write_word((uint16_t*)&(_CV.conf[i].servo.state), confpins[i]->get_state());
       DEBUG("Thrown switch: ");
       DEBUG(i);
