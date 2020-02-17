@@ -2,7 +2,7 @@
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10501
+#define VERSION 10502
 
 
 #if PINSERVO == 1
