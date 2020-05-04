@@ -2,7 +2,7 @@
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10501
+#define VERSION 10502
 
 
 #if PINSERVO == 1
@@ -257,8 +257,8 @@ void setup() {
   delay(250);
   if (!ds.search(addr)) {
     ds.reset_search();
-    for (uint8_t i = 0; i < 7 ; i++) {
-      addr[i] = 0x00;
+    for (uint8_t j = 0; j < 7 ; j++) {
+      addr[j] = 0x00;
     }
     DEBUGLN("No ds18s20 found for UID");
   } 
@@ -313,7 +313,7 @@ void loop() {
       DEBUG("Loop ");
       DEBUG((int)LnPacket);
       dumpPacket(LnPacket->ub);
-      packetConsumed = lnCV.processLNCVMessage(LnPacket);
+      lnCV.processLNCVMessage(LnPacket);
       DEBUG("End Loop\n");
     }
       DEBUG(pins_to_update.size());
