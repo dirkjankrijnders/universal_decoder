@@ -2,7 +2,7 @@
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10502
+#define VERSION 10503
 
 
 #if PINSERVO == 1
@@ -86,6 +86,8 @@ byte dsdata[9];
 #define POWER_VOLTAGE_PIN A2
 
 extern int __bss_start, __bss_end;
+
+void dumpPacket(UhlenbrockMsg&);
 
 int freeRam () {
   extern int __heap_start, *__brkval;
@@ -334,7 +336,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
       // Set new state
       confpins[i]->set(Direction, Output);
       // Add to the update queue
-    pins_to_update.add(i);
+      pins_to_update.add(i);
       // Call update once to get started
       confpins[i]->update();
       // Save the state
@@ -544,7 +546,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);
       DEBUG(read_cv(&_CV, lncvAddress));
-      if (lncvAddress > 31 && false) {
+      if (lncvAddress > 31) {
         uint8_t slot = cv2slot(lncvAddress);
         DEBUG("\n");
         DEBUG("Slot: ");
@@ -554,6 +556,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
         DEBUG("\n");
         confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
         confpins[slot]->print();
+        pins_to_update.add(slot);
       }
       //delete(confpins[slot]);
       //configureSlot(slot);
