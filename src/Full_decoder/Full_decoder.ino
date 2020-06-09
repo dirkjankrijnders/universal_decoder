@@ -32,14 +32,14 @@ uint8_t features = 0;
 /* TLC5947 Support*/
 #if TLC_SUPPORT
 #include "Adafruit_TLC5947.h"
-
+#warning "TLC SUpport"
 // How many boards do you have chained?
 #define NUM_TLC5974 1
 
 #ifdef TLC_PROTO
-#define data   10
-#define clock   16
-#define latch   14
+#define data   2
+#define clock   3
+#define latch   4
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
 #else
 #define data   16
@@ -126,11 +126,11 @@ uint16_t readPowerVoltage() {
 }
 
 void reportSlot(uint16_t slot, uint16_t state) {
-  DEBUG("Reporting slot ");
+  DEBUG(F("Reporting slot "));
   DEBUG(slot);
-  DEBUG(" Address: ");
+  DEBUG(F(" Address: "));
   DEBUG(confpins[slot]->_address);
-  DEBUG(" State: ");
+  DEBUG(F(" State: "));
   DEBUGLN(state);
   if (slot == 0)
     return;
@@ -217,28 +217,28 @@ void configureSlot(uint8_t slot) {
         confpins[slot] = new ConfiguredPin(slot, pin, address);
         break;
     }
-    DEBUG("Pin #");
+    DEBUG(F("Pin #"));
     DEBUGLN(slot);
     confpins[slot]->print();
     pins_to_update.add(slot);
 }
 void setup() {
 #ifdef USE_SERIAL
-#warning Debug!
   Serial.begin(57600);
   while (!Serial){
     ;
   }
+#warning Debug!
 #endif
 
-  DEBUG("Universal decoder v");  
+  DEBUG(F("Universal decoder v"));  
   DEBUGLN(VERSION);
-  DEBUG("Module address: ");
+  DEBUG(F("Module address: "));
   DEBUGLN(eeprom_read_byte(&_CV.address));
   LocoNet.init(LOCONET_TX_PIN);
   
   uint8_t i = 0;
-  DEBUG("Max # of pins:");
+  DEBUG(F("Max # of pins:"));
   DEBUGLN(MAX);
   pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
   if (pins_conf > MAX) pins_conf = MAX;
@@ -262,17 +262,17 @@ void setup() {
     for (uint8_t j = 0; j < 7 ; j++) {
       addr[j] = 0x00;
     }
-    DEBUGLN("No ds18s20 found for UID");
+    DEBUGLN(F("No ds18s20 found for UID"));
   } 
 
 #ifdef DEBUG_OUTPUT
     else {
-    DEBUG("UID: ");
+    DEBUG(F("UID: "));
     for (uint8_t i = 0; i < 7; i++) {
       Serial.print(i);
       Serial.print(addr[i], HEX);
     }
-    DEBUGLN(".");
+    DEBUGLN(F("."));
   }    
 #endif
 
@@ -281,7 +281,7 @@ void setup() {
 
 #ifdef POWER_VOLTAGE_PIN
   pinMode(POWER_VOLTAGE_PIN, INPUT);
-  Serial.print("Power voltage in mV: ");
+  Serial.print(F("Power voltage in mV: "));
   Serial.println(readPowerVoltage());
 #endif
 }
@@ -297,11 +297,11 @@ void loop() {
     //DEBUGLN(pins_to_update.get(current_pin_list));
     if (!confpins[pins_to_update.get(current_pin_list)]->update()) { // Update the first item, as long as update() returns true, otherwise...
       //pins_to_update.push(pins_to_update.first());
-      DEBUG("Done updating ");
+      DEBUG(F("Done updating "));
       DEBUGLN(pins_to_update.get(current_pin_list));
       pins_to_update.remove(current_pin_list); // ..drop the first item
       DEBUG(pins_to_update.size());
-      DEBUGLN(" active pins left in the queue");
+      DEBUGLN(F(" active pins left in the queue"));
     }
     // DEBUGLN(freeRam())
   }
@@ -312,20 +312,20 @@ void loop() {
   	DEBUG(".");
     uint8_t packetConsumed(LocoNet.processSwitchSensorMessage(LnPacket));
     if (packetConsumed == 0) {
-      DEBUG("Loop ");
+      DEBUG(F("Loop "));
       DEBUG((int)LnPacket);
       dumpPacket(LnPacket->ub);
       lnCV.processLNCVMessage(LnPacket);
-      DEBUG("End Loop\n");
+      DEBUG(F("End Loop\n"));
     }
       DEBUG(pins_to_update.size());
-      DEBUGLN(" active pins left in the queue");
+      DEBUGLN(F(" active pins left in the queue"));
     DEBUGLN(freeRam())
   }
 };
 
 void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) {
-  DEBUG("Switch Request: ");
+  DEBUG(F("Switch Request: "));
   DEBUG(Address);
   DEBUG(':');
   DEBUG(Direction ? "Closed" : "Thrown");
@@ -341,9 +341,9 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
       confpins[i]->update();
       // Save the state
       eeprom_write_word((uint16_t*)&(_CV.conf[i].servo.state), confpins[i]->get_state());
-      DEBUG("Thrown switch: ");
+      DEBUG(F("Thrown switch: "));
       DEBUG(i);
-      DEBUG(" to :");
+      DEBUG(F(" to :"));
       confpins[i]->print_state();
       DEBUG("\n");
     }
@@ -353,7 +353,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
 
 void dumpPacket(UhlenbrockMsg & ub) {
 #ifdef DEBUG_OUTPUT
-  Serial.print(" PKT: ");
+  Serial.print(F(" PKT: "));
   Serial.print(ub.command);
   Serial.print(" ");
   Serial.print(ub.mesg_size, HEX);
@@ -385,7 +385,7 @@ void dumpPacket(UhlenbrockMsg & ub) {
 int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
     uint16_t & lncvValue) {
 
-  DEBUG("Enter notifyLNCVread(");
+  DEBUG(F("Enter notifyLNCVread("));
   DEBUG(ArtNr);
   DEBUG(", ");
   DEBUG(lncvAddress);
@@ -404,11 +404,10 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
 		} else if (lncvAddress < 320) {
         lncvValue = read_cv(&_CV, lncvAddress);
 
-        DEBUG("\nEeprom address: ");
+        DEBUG(F("\nEeprom address: "));
         DEBUG(((uint16_t)&(_CV.address)+cv2address(lncvAddress)));
-        DEBUG(" LNCV Value: ");
-        DEBUG(lncvValue);
-        DEBUG("\n");
+        DEBUG(F(" LNCV Value: "));
+        DEBUGLN(lncvValue);
 
         return LNCV_LACK_OK;
 		  } else if (lncvAddress == 1018) {
@@ -480,13 +479,13 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
       }
     } else {
 
-      DEBUG("ArtNr invalid.\n");
+      DEBUG(F("ArtNr invalid.\n"));
 
       return -1;
     }
   } else {
 
-    DEBUG("Ignoring Request.\n");
+    DEBUG(F("Ignoring Request.\n"));
 
     return -1;
   }
@@ -506,7 +505,7 @@ int8_t notifyLNCVprogrammingStart(uint16_t & ArtNr, uint16_t & ModuleAddress) {
     if (ModuleAddress == MyModuleAddress) {
       programmingMode = true;
 
-      DEBUG("Programming started");
+      DEBUG(F("Programming started"));
 
       return LNCV_LACK_OK;
     } else if (ModuleAddress == 0xFFFF) {
@@ -529,7 +528,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
     return -1;
   }
 
-  DEBUG("Enter notifyLNCVwrite(");
+  DEBUG(F("Enter notifyLNCVwrite("));
   DEBUG(ArtNr);
   DEBUG(", ");
   DEBUG(lncvAddress);
@@ -549,9 +548,9 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       if (lncvAddress > 31) {
         uint8_t slot = cv2slot(lncvAddress);
         DEBUG("\n");
-        DEBUG("Slot: ");
+        DEBUG(F("Slot: "));
         DEBUG(slot);
-        DEBUG(" SlotCV: ");
+        DEBUG(F(" SlotCV: "));
         DEBUG(cv2slotcv(lncvAddress, slot));
         DEBUG("\n");
         confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
@@ -570,7 +569,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
   }
   else {
 
-    DEBUG("Artnr Invalid.\n");
+    DEBUG(F("Artnr Invalid.\n"));
 
     return -1;
   }
@@ -585,13 +584,13 @@ void commitLNCVUpdate() {
    */
 void notifyLNCVprogrammingStop(uint16_t ArtNr, uint16_t ModuleAddress) {
 
-  DEBUG("notifyLNCVprogrammingStop ");
+  DEBUG(F("notifyLNCVprogrammingStop "));
 
   if (programmingMode) {
     if (ArtNr == ARTNR && ModuleAddress == eeprom_read_byte(&_CV.address)) {
       programmingMode = false;
 
-      DEBUG("End Programing Mode.\n");
+      DEBUG(F("End Programing Mode.\n"));
 
 
       commitLNCVUpdate();
@@ -599,14 +598,14 @@ void notifyLNCVprogrammingStop(uint16_t ArtNr, uint16_t ModuleAddress) {
     else {
       if (ArtNr != ARTNR) {
 
-        DEBUG("Wrong Artnr.\n");
+        DEBUG(F("Wrong Artnr.\n"));
 
 
         return;
       }
       if (ModuleAddress != eeprom_read_byte(&_CV.address)) {
 
-        DEBUG("Wrong Module Address.\n");
+        DEBUG(F("Wrong Module Address.\n"));
 
 
         return;
@@ -615,14 +614,14 @@ void notifyLNCVprogrammingStop(uint16_t ArtNr, uint16_t ModuleAddress) {
   }
   else {
 
-    DEBUG("Ignoring Request.\n");
+    DEBUG(F("Ignoring Request.\n"));
 
 
   }
 }
 
 int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) {
-  DEBUG("Discover: ");
+  DEBUG(F("Discover: "));
   DEBUG(ArtNr);
   DEBUG(ARTNR);
   uint16_t MyModuleAddress = eeprom_read_byte(&_CV.address);
