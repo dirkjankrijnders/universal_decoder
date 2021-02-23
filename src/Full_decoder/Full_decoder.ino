@@ -1,9 +1,11 @@
 #include <OneWire.h>
+
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10503
+#define VERSION 10606
 
+uint8_t features = 0;
 
 #if PINSERVO == 1
 #warning "USING SERVO"
@@ -12,6 +14,7 @@
 #endif
 
 /* We're a loconet decoder! */
+#include <utility/ln_config.h>
 #include <LocoNet.h>
 
 /* Include the CV handling and the pin functionalities */
@@ -27,7 +30,6 @@ decoder_conf_t EEMEM _CV = {
 #define MAX 24
 ConfiguredPin* confpins[MAX];
 uint8_t pins_conf = 0;
-uint8_t features = 0;
 
 /* TLC5947 Support*/
 #if TLC_SUPPORT
@@ -42,6 +44,7 @@ uint8_t features = 0;
 #define latch   4
 #define oe  -1  // set to -1 to not use the enable pin (its optional)
 #else
+#warning pro micro
 #define data   16
 #define clock   15
 #define latch   10
@@ -140,11 +143,16 @@ void reportSlot(uint16_t slot, uint16_t state) {
 void setSlot(uint16_t slot, uint16_t state) {
   if (slot == 0)
     return;
-  if (slot < MAX)
+  if (slot < pins_conf)
     confpins[slot]->set(state, 0);
 }
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
+}
+
+uint16_t check_pin(uint16_t pin) {
+  if ((pin == 0) | (pin == 1) | (pin == 5) | (pin == 8)) return 255; // Pin 8 on 328, 4 on m32u4
+  return pin;
 }
 
 void configureSlot(uint8_t slot) {
@@ -154,6 +162,7 @@ void configureSlot(uint8_t slot) {
   
     pin_config = eeprom_read_byte((uint8_t*)&(_CV.pin_conf[slot]));
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
+    pin = check_pin(pin);
     address = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.address));
     DEBUGLN(pin_config);
     switch (pin_config) {
@@ -193,14 +202,24 @@ void configureSlot(uint8_t slot) {
         speed  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.duration));
         fbslot1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.fbslot1));
         fbslot2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.fbslot2));
+        pos2 = check_pin(pos2);
         confpins[slot] = new MagnetSwitch(slot, pin, address, pos2, speed, fbslot1, fbslot2);
         confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].magnet.state)));
           break;
+      case 6: // Multiport
+        pos1  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].multiport.baseslot));
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].multiport.nslots));
+        confpins[slot] = new MultiPort(slot, pin, address, pos1, pos2);
+        pos2  = eeprom_read_word((uint16_t*)&(_CV.conf[slot].multiport.baseslot));
+        confpins[slot]->restore_state(eeprom_read_word((uint16_t*)&(_CV.conf[slot].multiport.state)));
+        break;
 #if TLC_SUPPORT
       case 101: // TLC5947 PWM LED Controller.
-        pos1 = eeprom_read_word((uint16_t*)&(_CV.conf[slot].led.value1));
-        pin_config = ((eeprom_read_word((uint16_t*)&(_CV.conf[slot].led.function)) & 0x01) == 0x01);
-        confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin_config, pin, pos1);
+        DEBUGLN(F("TLC Pin"))
+        pos1 = 512; //eeprom_read_word((uint16_t*)&(_CV.conf[slot].led.value1));
+        pin_config = 0;
+        confpins[slot] = new TLC5947pin(&tlc, slot, pin, address, pin, pos1);
+        confpins[slot]->print();
         break;
 #endif // TLC_SUPPORT
       case 102: // PCA9686
@@ -221,10 +240,12 @@ void configureSlot(uint8_t slot) {
     DEBUGLN(slot);
     confpins[slot]->print();
     pins_to_update.add(slot);
-}
+ }
+
 void setup() {
 #ifdef USE_SERIAL
-  Serial.begin(57600);
+  //Serial.begin(57600);
+  Serial.begin(9600);
   while (!Serial){
     ;
   }
@@ -237,27 +258,33 @@ void setup() {
   DEBUGLN(eeprom_read_byte(&_CV.address));
   LocoNet.init(LOCONET_TX_PIN);
   
-  uint8_t i = 0;
-  DEBUG(F("Max # of pins:"));
-  DEBUGLN(MAX);
   pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
   if (pins_conf > MAX) pins_conf = MAX;
+  uint8_t i = 0;
+  DEBUG(F("Max # of pins: "));
+  DEBUG(pins_conf);
+  DEBUG(F(" / "));
+  DEBUGLN(MAX);
+  #if TLC_SUPPORT
+    tlc.begin();
+    features = features | 4;
+  #endif //TLC_SUPPORT
   DEBUGLN(freeRam());
+  //pins_conf = 0;
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
     DEBUGLN(freeRam())
   }
-#if TLC_SUPPORT
-  tlc.begin();
-  features = features | 4;
-#endif //TLC_SUPPORT
   features = features | 2;
 #if PINSERVO
   features = features | 1;
 #endif
   ds.reset_search();
+  Serial.print(".");
+  
   delay(250);
   if (!ds.search(addr)) {
+    Serial.print(".");
     ds.reset_search();
     for (uint8_t j = 0; j < 7 ; j++) {
       addr[j] = 0x00;
@@ -268,14 +295,22 @@ void setup() {
 #ifdef DEBUG_OUTPUT
     else {
     DEBUG(F("UID: "));
-    for (uint8_t i = 0; i < 7; i++) {
-      Serial.print(i);
-      Serial.print(addr[i], HEX);
+    for (uint8_t j = 0; j < 7; j++) {
+      Serial.print(j);
+      Serial.print(addr[j], HEX);
     }
     DEBUGLN(F("."));
   }    
 #endif
 
+  #ifdef __AVR_ATmega328PB__
+  Serial.print("328pb uid: ");
+  for (uint8_t j = 0; j < 7; j++) {
+    addr[j] = (byte)*((byte*)(0x0E + j));
+    Serial.print(addr[j], HEX);
+  }
+  Serial.println(".");
+  #endif
   pca.begin();
   pca.setPWMFreq(70);
 
@@ -284,16 +319,18 @@ void setup() {
   Serial.print(F("Power voltage in mV: "));
   Serial.println(readPowerVoltage());
 #endif
+  
+  DEBUGLN("setup done");
 }
 uint8_t current_pin_list;
 
 void loop() {
-
+  
   if (!(pins_to_update.size() == 0)) {
 	  current_pin_list += 1;
     if (current_pin_list >= pins_to_update.size())
       current_pin_list = 0;
-    //DEBUG("Updating pin ");
+    DEBUG(F("Updating pin "));
     //DEBUGLN(pins_to_update.get(current_pin_list));
     if (!confpins[pins_to_update.get(current_pin_list)]->update()) { // Update the first item, as long as update() returns true, otherwise...
       //pins_to_update.push(pins_to_update.first());
@@ -305,11 +342,24 @@ void loop() {
     }
     // DEBUGLN(freeRam())
   }
-  
+
+  if (Serial.available() > 0) {
+    if (Serial.read() == 'w') {
+      uint16_t cv = Serial.parseInt();
+      uint16_t val = Serial.parseInt();
+      Serial.print(F("Write CV "));
+      Serial.print(cv);
+      Serial.print(F(": "));
+      Serial.println(val);
+      write_cv(&_CV, cv, val);
+    }
+  }
+
   /*** LOCONET ***/
+  //DEBUG(".")
   LnPacket = LocoNet.receive();
   if (LnPacket) {
-  	DEBUG(".");
+    DEBUG(".")
     uint8_t packetConsumed(LocoNet.processSwitchSensorMessage(LnPacket));
     if (packetConsumed == 0) {
       DEBUG(F("Loop "));
@@ -331,8 +381,9 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
   DEBUG(Direction ? "Closed" : "Thrown");
   DEBUG(" - ");
   DEBUGLN(Output ? "On" : "Off");
-  for (uint8_t i =0 ; i < MAX ; i++) {
-    if (confpins[i]->_address == Address){
+  for (uint8_t i =0 ; i < pins_conf ; i++) {
+    if (confpins[i]->check_address(Address)){
+    // if (confpins[i]->_address == Address){
       // Set new state
       confpins[i]->set(Direction, Output);
       // Add to the update queue
@@ -553,9 +604,11 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
         DEBUG(F(" SlotCV: "));
         DEBUG(cv2slotcv(lncvAddress, slot));
         DEBUG("\n");
-        confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
-        confpins[slot]->print();
-        pins_to_update.add(slot);
+        if (slot < pins_conf) {
+          confpins[slot]->set_pin_cv(cv2slotcv(lncvAddress, slot), lncvValue);
+          confpins[slot]->print();
+          pins_to_update.add(slot);
+        }
       }
       //delete(confpins[slot]);
       //configureSlot(slot);
