@@ -3,7 +3,7 @@
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10606
+#define VERSION 10608
 
 uint8_t features = 0;
 
@@ -27,7 +27,7 @@ decoder_conf_t EEMEM _CV = {
 #include "default_conf.h"
 };
 
-#define MAX 24
+#define MAX 25
 ConfiguredPin* confpins[MAX];
 uint8_t pins_conf = 0;
 
@@ -57,6 +57,9 @@ Adafruit_TLC5947 tlc = Adafruit_TLC5947(NUM_TLC5974, clock, data, latch);
 
 #include <Adafruit_PWMServoDriver.h>
 
+#ifdef SOFTWARE_I2C
+#endif 
+
 // Default address = 0x40
 Adafruit_PWMServoDriver pca = Adafruit_PWMServoDriver();
 //features = features | 4;
@@ -82,6 +85,8 @@ OneWire ds(A3);
 byte addr[8];
 byte dsdata[9];
 
+#define START_FLASH 3
+
 #ifndef LOCONET_TX_PIN
   #define LOCONET_TX_PIN 7
 #endif
@@ -97,6 +102,17 @@ int freeRam () {
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 };
+
+void flash_led(int number) {
+  #if defined(__AVR_ATmega328PB__) 
+    for (uint8_t ii = 0; ii < number; ii++){
+      PORTE |= (1 << PE0); // Turn LED on
+      delay(125);
+      PORTE &= ~(1 << PE0); // Turn LED off
+      delay(125);
+    }
+  #endif
+}
 
 uint16_t readTemperature() {
   ds.reset();
@@ -140,11 +156,15 @@ void reportSlot(uint16_t slot, uint16_t state) {
 	LocoNet.reportSensor(confpins[slot]->_address, state);
 }
 
-void setSlot(uint16_t slot, uint16_t state) {
+void setSlot(uint16_t slot, uint16_t port, uint16_t state = 0) {
   if (slot == 0)
     return;
   if (slot < pins_conf)
-    confpins[slot]->set(state, 0);
+    confpins[slot]->set(port, state);
+}
+
+void setSlot(uint16_t slot, uint16_t state) {
+  setSlot(slot, state, 0);
 }
 void reportSensor(uint16_t address, bool state) {
   LocoNet.reportSensor(address, state);
@@ -164,7 +184,6 @@ void configureSlot(uint8_t slot) {
     pin   = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.arduinopin));
     pin = check_pin(pin);
     address = eeprom_read_word((uint16_t*)&(_CV.conf[slot].servo.address));
-    DEBUGLN(pin_config);
     switch (pin_config) {
       case 2: //Servo
         //ServoSwitch(i,0);
@@ -238,6 +257,8 @@ void configureSlot(uint8_t slot) {
     }
     DEBUG(F("Pin #"));
     DEBUGLN(slot);
+    DEBUG(F("Pin type:"))
+    DEBUGLN(pin_config);
     confpins[slot]->print();
     pins_to_update.add(slot);
  }
@@ -256,10 +277,16 @@ void setup() {
   DEBUGLN(VERSION);
   DEBUG(F("Module address: "));
   DEBUGLN(eeprom_read_byte(&_CV.address));
+
+  #if defined(__AVR_ATmega328PB__) 
+  DDRE |= (1 << PE0);
+  #endif
+  flash_led(START_FLASH);
+
   LocoNet.init(LOCONET_TX_PIN);
   
   pins_conf = eeprom_read_byte((uint8_t*)&(_CV.pins_conf));
-  if (pins_conf > MAX) pins_conf = MAX;
+  if (pins_conf > MAX - 1) pins_conf = MAX - 1;
   uint8_t i = 0;
   DEBUG(F("Max # of pins: "));
   DEBUG(pins_conf);
@@ -273,18 +300,23 @@ void setup() {
   //pins_conf = 0;
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
-    DEBUGLN(freeRam())
+    DEBUG(freeRam())
+    DEBUGLN(F(" bytes RAM free"))
   }
+  #ifdef __AVR_ATmega328PB__
+    confpins[pins_conf] = new OutputPin(pins_conf, 26, 0, false, false);
+    pins_conf += 1;
+  #endif
   features = features | 2;
 #if PINSERVO
   features = features | 1;
 #endif
   ds.reset_search();
-  Serial.print(".");
+  DEBUG(".");
   
   delay(250);
   if (!ds.search(addr)) {
-    Serial.print(".");
+    DEBUG(".");
     ds.reset_search();
     for (uint8_t j = 0; j < 7 ; j++) {
       addr[j] = 0x00;
@@ -296,28 +328,28 @@ void setup() {
     else {
     DEBUG(F("UID: "));
     for (uint8_t j = 0; j < 7; j++) {
-      Serial.print(j);
-      Serial.print(addr[j], HEX);
+      DEBUG(j);
+      DEBUG2(addr[j], HEX);
     }
     DEBUGLN(F("."));
   }    
 #endif
 
   #ifdef __AVR_ATmega328PB__
-  Serial.print("328pb uid: ");
+  DEBUG("328pb uid: ");
   for (uint8_t j = 0; j < 7; j++) {
     addr[j] = (byte)*((byte*)(0x0E + j));
-    Serial.print(addr[j], HEX);
+    DEBUG2(addr[j], HEX);
   }
-  Serial.println(".");
+  DEBUGLN(".");
   #endif
   pca.begin();
   pca.setPWMFreq(70);
 
 #ifdef POWER_VOLTAGE_PIN
   pinMode(POWER_VOLTAGE_PIN, INPUT);
-  Serial.print(F("Power voltage in mV: "));
-  Serial.println(readPowerVoltage());
+  DEBUG(F("Power voltage in mV: "));
+  DEBUGLN(readPowerVoltage());
 #endif
   
   DEBUGLN("setup done");
@@ -330,8 +362,8 @@ void loop() {
 	  current_pin_list += 1;
     if (current_pin_list >= pins_to_update.size())
       current_pin_list = 0;
-    DEBUG(F("Updating pin "));
-    //DEBUGLN(pins_to_update.get(current_pin_list));
+    // DEBUG(F("Updating pin "));
+    // DEBUGLN(pins_to_update.get(current_pin_list));
     if (!confpins[pins_to_update.get(current_pin_list)]->update()) { // Update the first item, as long as update() returns true, otherwise...
       //pins_to_update.push(pins_to_update.first());
       DEBUG(F("Done updating "));
@@ -343,6 +375,9 @@ void loop() {
     // DEBUGLN(freeRam())
   }
 
+  /*Serial.print(DDRB, HEX);
+  Serial.print(", 0x");
+  Serial.println(PINB, HEX);*/
   if (Serial.available() > 0) {
     if (Serial.read() == 'w') {
       uint16_t cv = Serial.parseInt();
@@ -359,7 +394,7 @@ void loop() {
   //DEBUG(".")
   LnPacket = LocoNet.receive();
   if (LnPacket) {
-    DEBUG(".")
+    // DEBUG(".")
     uint8_t packetConsumed(LocoNet.processSwitchSensorMessage(LnPacket));
     if (packetConsumed == 0) {
       DEBUG(F("Loop "));
@@ -372,6 +407,12 @@ void loop() {
       DEBUGLN(F(" active pins left in the queue"));
     DEBUGLN(freeRam())
   }
+
+  #if defined(__AVR_ATmega328PB__)
+  if (programmingMode) {
+    PORTE ^= (1 << PE0);
+  }
+  #endif
 };
 
 void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) {
@@ -642,6 +683,11 @@ void notifyLNCVprogrammingStop(uint16_t ArtNr, uint16_t ModuleAddress) {
   if (programmingMode) {
     if (ArtNr == ARTNR && ModuleAddress == eeprom_read_byte(&_CV.address)) {
       programmingMode = false;
+      #if defined(__AVR_ATmega328PB__)
+      if (programmingMode) {
+        PORTE &= ~(1 << PE0);
+      }
+      #endif
 
       DEBUG(F("End Programing Mode.\n"));
 
