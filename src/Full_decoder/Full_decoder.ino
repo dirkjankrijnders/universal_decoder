@@ -3,9 +3,9 @@
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10608
+#define VERSION 10609
 
-uint8_t features = 0;
+uint16_t features = 0;
 
 #if PINSERVO == 1
 #warning "USING SERVO"
@@ -302,6 +302,10 @@ void setup() {
     tlc.begin();
     features = features | 4;
   #endif //TLC_SUPPORT
+  #ifdef DEBUG_OUTPUT
+    features = features | (1 << 3);
+  #endif
+
   DEBUGLN(freeRam());
   //pins_conf = 0;
   if (read_cv(&_CV, STARTUP_CODE_CV) == STARTUP_CODE_BOOT_FAILED) {
