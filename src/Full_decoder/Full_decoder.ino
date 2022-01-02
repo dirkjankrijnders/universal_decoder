@@ -3,7 +3,7 @@
 #include <LinkedList.h>
 
 #include "config.h"
-#define VERSION 10609
+#define VERSION 107000
 
 uint16_t features = 0;
 
