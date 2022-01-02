@@ -93,6 +93,12 @@ byte dsdata[9];
 
 #define POWER_VOLTAGE_PIN A2
 
+#define STARTUP_CODE_CV 2
+
+#define STARTUP_CODE_OK 240
+#define STARTUP_CODE_CV_CHANGED 239
+#define STARTUP_CODE_BOOT_FAILED 238
+
 extern int __bss_start, __bss_end;
 
 void dumpPacket(UhlenbrockMsg&);
@@ -298,6 +304,14 @@ void setup() {
   #endif //TLC_SUPPORT
   DEBUGLN(freeRam());
   //pins_conf = 0;
+  if (read_cv(&_CV, STARTUP_CODE_CV) == STARTUP_CODE_BOOT_FAILED) {
+    pins_conf = 0;
+    return;
+  }
+
+  if (read_cv(&_CV, STARTUP_CODE_CV) == STARTUP_CODE_CV_CHANGED) {
+    write_cv(&_CV, STARTUP_CODE_CV, STARTUP_CODE_BOOT_FAILED);
+  }
   for (i = 0; i < pins_conf; i++) {
     configureSlot(i);
     DEBUG(freeRam())
@@ -351,7 +365,9 @@ void setup() {
   DEBUG(F("Power voltage in mV: "));
   DEBUGLN(readPowerVoltage());
 #endif
-  
+  if (read_cv(&_CV, STARTUP_CODE_CV) == STARTUP_CODE_BOOT_FAILED) {
+    write_cv(&_CV, STARTUP_CODE_CV, STARTUP_CODE_OK);
+  }
   DEBUGLN("setup done");
 }
 uint8_t current_pin_list;
@@ -636,6 +652,7 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
       DEBUG(bytesizeCV(lncvAddress));
       DEBUG((uint8_t)lncvValue);
       write_cv(&_CV, lncvAddress, lncvValue);
+      write_cv(&_CV, STARTUP_CODE_CV, STARTUP_CODE_CV_CHANGED);
       DEBUG(read_cv(&_CV, lncvAddress));
       if (lncvAddress > 31) {
         uint8_t slot = cv2slot(lncvAddress);
